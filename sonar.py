@@ -27,9 +27,11 @@ def getSonar():
     time.sleep(0.00001)
     GPIO.output(TRIG, False)
     # starting the pulse
+    pulse_start = time.time()
     while GPIO.input(ECHO) == 0:
         pulse_start = time.time()
     # ending the pulse
+    pulse_end = time.time()
     while GPIO.input(ECHO) == 1:
         pulse_end = time.time()
     # calculatGPIOn of distance
