@@ -5,6 +5,13 @@
 #
 
 #----------------------#
+# import libraries
+from picamera import PiCamera
+from time import sleep
+
+
+
+#----------------------#
 # 2WD Mobile Platform Code
 
 
@@ -18,7 +25,10 @@
 
 #----------------------#
 # Camera code
-
+camera = PiCamera()
+camera.start_preview()
+sleep(5)
+camera.stop_preview()
 
 
 #----------------------#
