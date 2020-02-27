@@ -45,7 +45,6 @@ def capture(i):
 
 #----------------------#
 # Sensors code
-<<<<<<< HEAD
 
 #----------------------#
 # Motors code
@@ -69,5 +68,3 @@ for i in range(100):
     time.sleep(0.01)
 
 
-=======
->>>>>>> 3d2680d0de51867db3ff67e8a9c0ae4c4c468a3b
