@@ -39,3 +39,5 @@ def getSonar():
     distance = round(distance, 2)
     return distance
 
+while True:
+    print(getSonar())
