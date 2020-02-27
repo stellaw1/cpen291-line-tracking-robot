@@ -12,8 +12,8 @@ camera used to display like a drone
 android app connects to robot
 gui for lcd controlled by app
 
-IMPORTANT
-The only libraries allowed are RPi.GPIO, Adafruit's Motor Hat, LCD, time, SPI, tkinter, and the math modules.The only libraries allowed are RPi.GPIO, Adafruit's Motor Hat, LCD, time, SPI, tkinter, and the math modules.
+**IMPORTANT: <br>
+**The only libraries allowed are RPi.GPIO, Adafruit's Motor Hat, LCD, time, SPI, tkinter, and the math modules.The only libraries allowed are RPi.GPIO, Adafruit's Motor Hat, LCD, time, SPI, tkinter, and the math modules.
 
 Refer to this for ideas:
 https://www.instructables.com/id/The-All-Inclusive-Autonomous-Robot-Asset/
