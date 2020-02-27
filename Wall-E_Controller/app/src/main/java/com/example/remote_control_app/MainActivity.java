@@ -1,9 +1,10 @@
 package com.example.remote_control_app;
 
+import android.util.Log;
 import androidx.appcompat.app.AppCompatActivity;
 import android.os.Bundle;
 
-public class MainActivity extends AppCompatActivity implements JoystickView.JoystickListener {
+public class MainActivity extends AppCompatActivity implements Joystick.JoystickListener {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
