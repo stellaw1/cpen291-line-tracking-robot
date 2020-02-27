@@ -6,10 +6,6 @@ import time
 GPIO.setmode(GPIO.BCM)
 GPIO.setwarnings(False)
 
-GPIO.setup(12, GPIO.OUT)
-pwm = GPIO.PWM(12, 50)
-pwm.start(0)
-
 # setting the ports for ultrasonic sensor
 TRIG = 23
 ECHO = 24
