@@ -17,3 +17,5 @@ Add ideas and split work here
 
 ## References
 https://www.instructables.com/id/The-All-Inclusive-Autonomous-Robot-Asset/
+
+any of the components in the kit, such as: ultrasonic sensor, servos, keypad, MCP3008, 74HC595, LEDs, buzzer, Pi camera, ... your own, such as: gyroscope or accelerometer, infrared remote control, wheel encoder ...
