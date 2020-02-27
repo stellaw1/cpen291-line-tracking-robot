@@ -1,60 +1,52 @@
 # CPEN 291 B_G11 Project 1
 #
-# Authors:
-# Date:
+# Authors: Manek, Amir, Rain, Parsa, Stella, Arnold, Sanjeev
+# Date: February 27th, 2020
 #
 
-#----------------------#
+#-----------------------------------------------------------------#
 # import libraries
 from picamera import PiCamera
 from time import sleep
 
 
 
-#----------------------#
+#-----------------------------------------------------------------#
 # 2WD Mobile Platform Code
 
 
-#----------------------#
+#-----------------------------------------------------------------#
 # RPi code
 
 
-#----------------------#
+#-----------------------------------------------------------------#
 # Line tracking code
 
 
-#----------------------#
+#-----------------------------------------------------------------#
 # Camera code
 #
 # Source: https://projects.raspberrypi.org/en/projects/getting-started-with-picamera/7
-"""
-# image setup
-camera.resolution = (2592, 1944)
-camera.framerate = 15
-camera.annotate_text_size = 50
-"""
+
 camera = PiCamera()
-# take 5 photos
-camera.start_preview()
-camera.annotate_text = "B_G11"
-for i in range(5):
-    sleep(5)
+
+# image setup
+camera.resolution = (500, 300)
+camera.annotate_text_size = 30
+
+# function that takes 1 photo, saves it as image-i.jpg. Overwrites previous captures if parameter i is repeated
+def capture(i):
+    camera.start_preview()
+    camera.annotate_text = "B_G11"
+    sleep(3)
     camera.capture('/home/pi/Desktop/image%s.jpg' % i)
-camera.stop_preview()
-"""
-# take a video
-camera.start_preview()
-camera.start_recording('/home/pi/Desktop/video.h264')
-sleep(5)
-camera.stop_recording()
-camera.stop_preview()
+    camera.stop_preview()
 
-"""
 
-#----------------------#
+#-----------------------------------------------------------------#
 # Sensors code
 
-#----------------------#
+#-----------------------------------------------------------------#
 # Motors code
 
 #Sample 1---------
