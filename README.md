@@ -18,6 +18,8 @@ Add ideas and split work here
 ## References
 https://www.instructables.com/id/The-All-Inclusive-Autonomous-Robot-Asset/
 
+https://www.instructables.com/id/Turtle-2WD-Robot/
+
 https://projects.raspberrypi.org/en/projects/rpi-python-line-following
 
 https://circuitdigest.com/microcontroller-projects/raspberry-pi-line-follower-robot
