@@ -17,3 +17,4 @@ Add ideas and split work here
 
 ## References
 https://www.instructables.com/id/The-All-Inclusive-Autonomous-Robot-Asset/
+https://projects.raspberrypi.org/en/projects/rpi-python-line-following
