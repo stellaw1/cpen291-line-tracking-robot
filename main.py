@@ -54,7 +54,6 @@ camera.stop_preview()
 #----------------------#
 # Sensors code
 
-<<<<<<< HEAD
 #----------------------#
 # Motors code
 
@@ -77,5 +76,3 @@ for i in range(100):
     time.sleep(0.01)
 
 
-=======
->>>>>>> 881c37ae60bd9f79966ee2adb38f2925f062a64e
