@@ -1,34 +1,32 @@
 import RPi.GPIO as GPIO
+import time
 
-IRTrackingPin = 11
-OutLedPin = 12
+GPIO.setwarnings(False)
+
+
+IRTrackingPin = 12
 
 
 def setup():
-    GPIO.setmode(GPIO.BOARD) # Set the GPIO pins as numbering
-    GPIO.setup(OutLedPin, GPIO.OUT) # Set the OutLedPin's mode is output
+    GPIO.setmode(GPIO.BCM) # Set the GPIO pins as BCM
     GPIO.setup(IRTrackingPin, GPIO.IN, pull_up_down=GPIO.PUD_UP)
-    GPIO.output(OutLedPin, GPIO.HIGH) # Set the OutLedPin high(+3.3V) to off led
 
 
 def loop():
     while True:
         if GPIO.input(IRTrackingPin) == GPIO.LOW:
-
             print('IR Tracking Test Code')
             print('------------------------------')
             print('The sensor detects white color line')
 
-            GPIO.output(OutLedPin, GPIO.LOW) # Set the OutLedPin turn HIGH/ON
         else:
-
             print('IR Tracking Test Code')
             print('------------------------------')
             print('The sensor detects black color line')
-            GPIO.output(OutLedPin, GPIO.HIGH) # Set the OutLedPin turn LOW/OFF
+        time.sleep(0.2)
+
 
 def destroy():
-    GPIO.output(OutLedPin, GPIO.HIGH) # Set the OutLedPin turn HIGH
     GPIO.cleanup() # Release resource
 
 
