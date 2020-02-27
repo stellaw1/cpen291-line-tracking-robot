@@ -6,10 +6,6 @@ import time
 GPIO.setmode(GPIO.BCM)
 GPIO.setwarnings(False)
 
-GPIO.setup(12, GPIO.OUT)
-pwm = GPIO.PWM(12, 50)
-pwm.start(0)
-
 # setting the ports for ultrasonic sensor
 TRIG = 23
 ECHO = 24
@@ -21,7 +17,7 @@ def getSonar():
     GPIO.setup(TRIG, GPIO.OUT)
     GPIO.setup(ECHO, GPIO.IN)
     GPIO.output(TRIG, False)
-    time.sleep(1)
+    time.sleep(0.1)
     # time between the pulse 10uS
     GPIO.output(TRIG, True)
     time.sleep(0.00001)
