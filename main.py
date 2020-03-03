@@ -47,10 +47,10 @@ import time
 GPIO.setwarnings(False)
 
 
-IRTrackingPinLL = 12
-IRTrackingPinL = 13
-IRTrackingPinR = 14
-IRTrackingPinRR = 15
+#IRTrackingPinLL = 12
+IRTrackingPinL = 12
+IRTrackingPinR = 16
+#IRTrackingPinRR = 15
 pins = [IRTrackingPinL, IRTrackingPinR]
 
 def setupOptiSensor():
@@ -64,8 +64,9 @@ def setupOptiSensor():
 def getOptiValues():
     value = 0
     for pin in pins:
-        value = value + GPIO.input(pin)
-        value << 1 
+        value = value << 1
+        value = value | GPIO.input(pin)
+    print(value)
     return value
 
 def destroy():
@@ -74,28 +75,10 @@ def destroy():
 #-----------------------------------------------------------------#
 # Motors code
 
-#Sample 1---------
-import time
-from adafruit_motorkit import MotorKit
-kit = MotorKit()
-kit.motor1.throttle = 1.0
-time.sleep(0.5)
-kit.motor1.throttle = 0
-
-#Sample 2---------stepper motor
-import time
-from adafruit_motorkit import MotorKit
-
-kit = MotorKit()
-
-for i in range(100):
-    kit.stepper1.onestep()
-    time.sleep(0.01)
-
 #-----------------------------------------------------------------#
 # Line tracking code
 
-import PID as pid
+from PID import PID as pid
 
 setupOptiSensor()
 
@@ -104,22 +87,24 @@ error = 0
 def getError():
     data = getOptiValues()
     error = 0.0
-    if data is 0b10:
+    if data is 0b01:
         print("straight")
         error = 0
-    elif data is 0b01:
+    elif data is 0b10:
         print("too left")
         error = 1
-    elif data is 0b11:
+    elif data is 0b00:
         print("a bit left")
         error = 0.5
-    elif data is 0b00:
+    elif data is 0b11:
         print("a bit right")
         error = -0.5
     else:
         print("invalid data")
         return 0
     return error
-
-PID = pid.init(pid, Kp=0.1, Ki=0.1, Kd=0.1)
-output = PID.update(PID, error) 
+while True:
+    pid.init(pid, Kp=0.01, Ki=0.001, Kd=0.001)
+    output = pid.Update(pid, getError())
+    time.sleep(0.5)
+    print(output)
