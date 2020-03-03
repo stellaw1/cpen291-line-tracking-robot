@@ -1,6 +1,6 @@
 import bluetooth
 
-bd_addr = "01:23:45:67:89:AB" #pi's bluetooth address here?
+bd_addr = "DC:A6:32:30:25:AC" #pi's bluetooth address here?
 
 port = 1
 
