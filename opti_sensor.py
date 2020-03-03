@@ -13,6 +13,10 @@ IRTrackingPinRR = 15
 def setup():
     GPIO.setmode(GPIO.BCM) # Set the GPIO pins as BCM
     GPIO.setup(IRTrackingPinLL, GPIO.IN, pull_up_down=GPIO.PUD_UP)
+    GPIO.setup(IRTrackingPinL, GPIO.IN, pull_up_down=GPIO.PUD_UP)
+    GPIO.setup(IRTrackingPinR, GPIO.IN, pull_up_down=GPIO.PUD_UP)
+    GPIO.setup(IRTrackingPinRR, GPIO.IN, pull_up_down=GPIO.PUD_UP)
+
 
 
 def loop():
