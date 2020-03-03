@@ -9,4 +9,6 @@ sock.connect((bd_addr, port))
 
 sock.send("hello asdf!!")
 
+print("finished client request")
+
 sock.close()
