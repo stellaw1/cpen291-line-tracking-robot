@@ -71,18 +71,28 @@ def getOptiValues():
 def destroy():
     GPIO.cleanup() # Release resource
 
+
+
+
+
+
 #-----------------------------------------------------------------#
 # Motors code
 
-#Sample 1---------
+
+#Version 1: motor code (TESTED & WORKING)
+
+# motor1/M2 is RIGHT wheel
+# motor2/M1 is LEFT wheel
 import time
 from adafruit_motorkit import MotorKit
 kit = MotorKit()
-kit.motor1.throttle = 1.0
+kit.motor1.throttle = 1.0 # to throttle motor forward
 time.sleep(0.5)
-kit.motor1.throttle = 0
+kit.motor1.throttle = 0 #to stop the motor
 
-#Sample 2---------stepper motor
+
+#Version 2: stepper motor (TESTED & BUGGY - motor 2 alternates between rotating forward and backwards when running kit.stepper2.onestep() )
 import time
 from adafruit_motorkit import MotorKit
 
@@ -91,6 +101,12 @@ kit = MotorKit()
 for i in range(100):
     kit.stepper1.onestep()
     time.sleep(0.01)
+
+
+
+
+
+
 
 #-----------------------------------------------------------------#
 # Line tracking code
