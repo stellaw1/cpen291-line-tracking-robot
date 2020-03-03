@@ -1,43 +1,81 @@
-import RPi.GPIO as IO
+import RPi.GPIO as GPIO
 import time
-IO.setwarnings(False)
-IO.setmode(IO.BCM)
 
-IO.setup(2,IO.IN) #GPIO 2 -> Left IR out
-IO.setup(3,IO.IN) #GPIO 3 -> Right IR out
+GPIO.setmode(GPIO.BOARD)
+GPIO.setup(11, GPIO.OUT)
+GPIO.setup(13, GPIO.OUT)
+GPIO.setup(15, GPIO.OUT)
+GPIO.setup(16, GPIO.OUT)
 
-IO.setup(4,IO.OUT) #GPIO 4 -> Motor 1 terminal A
-IO.setup(14,IO.OUT) #GPIO 14 -> Motor 1 terminal B
+GPIO.setup(31, GPIO.IN)  # Left Line Sensor Reading
+GPIO.setup(32, GPIO.IN)  # Right Line Sensor Reading
 
-IO.setup(17,IO.OUT) #GPIO 17 -> Motor Left terminal A
-IO.setup(18,IO.OUT) #GPIO 18 -> Motor Left terminal B
+print "Waiting For Sensor To Settle"
+time.sleep(2)
 
-while 1:
 
-    if(IO.input(2)==True and IO.input(3)==True): #both while move forward     
-        IO.output(4,True) #1A+
-        IO.output(14,False) #1B-
 
-        IO.output(17,True) #2A+
-        IO.output(18,False) #2B-
+def GetSensorReadings():
+    print "Taking sensor readings"
+    leftlinesensor = GPIO.input(31)
+    rightlinesensor = GPIO.input(32)
+    print leftlinesensor
+    print rightlinesensor
+    return leftlinesensor, rightlinesensor
 
-    elif(IO.input(2)==False and IO.input(3)==True): #turn right  
-        IO.output(4,True) #1A+
-        IO.output(14,True) #1B-
 
-        IO.output(17,True) #2A+
-        IO.output(18,False) #2B-
+def Forward():
+    GPIO.output(11, 1)
+    GPIO.output(13, 0)
+    GPIO.output(15, 1)
+    GPIO.output(16, 0)
 
-    elif(IO.input(2)==True and IO.input(3)==False): #turn left
-        IO.output(4,True) #1A+
-        IO.output(14,False) #1B-
 
-        IO.output(17,True) #2A+
-        IO.output(18,True) #2B-
+def Reverse():
+    GPIO.output(11, 0)
+    GPIO.output(13, 1)
+    GPIO.output(15, 0)
+    GPIO.output(16, 1)
 
-    else:  #stay still
-        IO.output(4,True) #1A+
-        IO.output(14,True) #1B-
 
-        IO.output(17,True) #2A+
-        IO.output(18,True) #2B-
+def Right():
+    GPIO.output(11, 1)
+    GPIO.output(13, 0)
+    GPIO.output(15, 0)
+    GPIO.output(16, 1)
+
+
+def Left():
+    GPIO.output(11, 0)
+    GPIO.output(13, 1)
+    GPIO.output(15, 1)
+    GPIO.output(16, 0)
+
+
+def Brake():
+    GPIO.output(11, 1)
+    GPIO.output(13, 1)
+    GPIO.output(15, 1)
+    GPIO.output(16, 1)
+
+
+try:
+    while (True):
+        rightlinesensor, leftlinesensor = GetSensorReadings()
+        if leftlinesensor == 1 and rightlinesensor == 0:
+            Brake()
+            time.sleep(0.15)
+            Right()
+            time.sleep(0.15)
+        elif rightlinesensor == 1 and leftlinesensor == 0:
+            Brake()
+            time.sleep(0.15)
+            Left()
+            time.sleep(0.15)
+        else:
+            Forward()
+
+finally:
+    Brake()
+    print("Cleaning Up!")
+    GPIO.cleanup()
