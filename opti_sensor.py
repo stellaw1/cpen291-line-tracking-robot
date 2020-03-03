@@ -4,25 +4,44 @@ import time
 GPIO.setwarnings(False)
 
 
-IRTrackingPin = 12
+IRTrackingPinLL = 12
+IRTrackingPinL = 13
+IRTrackingPinR = 14
+IRTrackingPinRR = 15
 
 
 def setup():
     GPIO.setmode(GPIO.BCM) # Set the GPIO pins as BCM
-    GPIO.setup(IRTrackingPin, GPIO.IN, pull_up_down=GPIO.PUD_UP)
+    GPIO.setup(IRTrackingPinLL, GPIO.IN, pull_up_down=GPIO.PUD_UP)
 
 
 def loop():
     while True:
-        if GPIO.input(IRTrackingPin) == GPIO.LOW:
+        if GPIO.input(IRTrackingPinL) == GPIO.LOW and GPIO.input(IRTrackingPinR) == GPIO.LOW and GPIO.input(IRTrackingPinLL) == GPIO.LOW and GPIO.input(IRTrackingPinRR) == GPIO.LOW:
             print('IR Tracking Test Code')
             print('------------------------------')
             print('The sensor detects white color line')
 
-        else:
+        elif GPIO.input(IRTrackingPinL) == GPIO.HIGH and GPIO.input(IRTrackingPinR) == GPIO.HIGH and GPIO.input(IRTrackingPinLL) == GPIO.LOW and GPIO.input(IRTrackingPinRR) == GPIO.LOW:
             print('IR Tracking Test Code')
             print('------------------------------')
             print('The sensor detects black color line')
+
+        elif GPIO.input(IRTrackingPinL) == GPIO.HIGH and GPIO.input(IRTrackingPinR) == GPIO.LOW and GPIO.input(IRTrackingPinLL) == GPIO.HIGH and GPIO.input(IRTrackingPinRR) == GPIO.LOW:
+            print('IR Tracking Test Code')
+            print('------------------------------')
+            print('The sensor detects 90 degree left turn')
+
+        elif GPIO.input(IRTrackingPinL) == GPIO.LOW and GPIO.input(IRTrackingPinR) == GPIO.HIGH and GPIO.input(IRTrackingPinLL) == GPIO.LOW and GPIO.input(IRTrackingPinRR) == GPIO.HIGH:
+            print('IR Tracking Test Code')
+            print('------------------------------')
+            print('The sensor detects 90 degree right turn')
+
+        elif GPIO.input(IRTrackingPinL) == GPIO.HIGH and GPIO.input(IRTrackingPinR) == GPIO.HIGH and GPIO.input(IRTrackingPinLL) == GPIO.HIGH and GPIO.input(IRTrackingPinRR) == GPIO.HIGH:
+            print('IR Tracking Test Code')
+            print('------------------------------')
+            print('The sensor detects an intersection')
+            # TODO: run motor for a bit to see if intersection is + or T
         time.sleep(0.2)
 
 
