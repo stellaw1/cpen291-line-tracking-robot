@@ -1,6 +1,6 @@
 import bluetooth
 
-bd_addr = "01:23:45:67:89:AB" #pi's bluetooth address here?
+bd_addr = "DC:A6:32:30:25:AC" #pi's bluetooth address here?
 
 port = 1
 
@@ -8,5 +8,7 @@ sock=bluetooth.BluetoothSocket( bluetooth.RFCOMM )
 sock.connect((bd_addr, port))
 
 sock.send("hello asdf!!")
+
+print("finished client request")
 
 sock.close()
