@@ -66,7 +66,7 @@ def getOptiValues():
     for pin in pins:
         value = value << 1
         value = value | GPIO.input(pin)
-    print(value)
+    #print(value)
     return value
 
 def destroy():
@@ -106,5 +106,5 @@ def getError():
 while True:
     pid.init(pid, Kp=0.01, Ki=0.001, Kd=0.001)
     output = pid.Update(pid, getError())
-    time.sleep(0.5)
+    time.sleep(0.01)
     print(output)
