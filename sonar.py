@@ -17,7 +17,7 @@ def getSonar():
     GPIO.setup(TRIG, GPIO.OUT)
     GPIO.setup(ECHO, GPIO.IN)
     GPIO.output(TRIG, False)
-    time.sleep(1)
+    time.sleep(0.1)
     # time between the pulse 10uS
     GPIO.output(TRIG, True)
     time.sleep(0.00001)
@@ -37,3 +37,5 @@ def getSonar():
     distance = round(distance, 2)
     return distance
 
+while True:
+    print(getSonar())
