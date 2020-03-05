@@ -5,41 +5,6 @@
 #
 
 #-----------------------------------------------------------------#
-# import libraries
-from picamera import PiCamera
-from time import sleep
-
-
-
-#-----------------------------------------------------------------#
-# 2WD Mobile Platform Code
-
-
-#-----------------------------------------------------------------#
-# RPi code
-
-#-----------------------------------------------------------------#
-# Camera code
-#
-# Source: https://projects.raspberrypi.org/en/projects/getting-started-with-picamera/7
-
-camera = PiCamera()
-
-# image setup
-camera.resolution = (500, 300)
-camera.annotate_text_size = 30
-
-# function that takes 1 photo, saves it as image-i.jpg. Overwrites previous captures if parameter i is repeated
-def capture(i):
-    camera.start_preview()
-    camera.annotate_text = "B_G11"
-    sleep(3)
-    camera.capture('/home/pi/Desktop/image%s.jpg' % i)
-    camera.stop_preview()
-    return '/home/pi/Desktop/image'+i+'.jpg'
-
-
-#-----------------------------------------------------------------#
 # Sensors code
 
 import RPi.GPIO as GPIO
@@ -82,10 +47,8 @@ def destroy():
 
 #-----------------------------------------------------------------#
 # Motors code
-
-import time
 from adafruit_motorkit import MotorKit
-import adafruit_motor import stepper
+from adafruit_motor import stepper
 
 
 kit = MotorKit()
@@ -95,7 +58,7 @@ def robot_stop():
     kit.motor2.throttle = 0.0
 
 def robot_move(motor1_config, motor2_config, time):
-    for i in range(time):    
+    for i in range(time):
         kit.motor1.throttle = motor1_config
         kit.motor2.throttle = motor2_config
     robot_stop()
@@ -108,7 +71,7 @@ def robot_dir(direction, time):
     elif direction == "left":
          robot_move(0.5, -0.5, time)
     elif direction == "right":
-         robot_move(-0.5, 0.5, time)         
+         robot_move(-0.5, 0.5, time)
 
 def robot_ir(old_motor1, old_motor_2, adjuster, time, flag):
     if flag == 1:
@@ -117,7 +80,7 @@ def robot_ir(old_motor1, old_motor_2, adjuster, time, flag):
         elif adjuster>0:
             robot_move(old_motor1-adjuster, old_motor_2, time)
         elif adjuster<0:
-            robot_move(old_motor1, old_motor_2-adjuster, time)    
+            robot_move(old_motor1, old_motor_2-adjuster, time)
     else:
         robot_stop()
 
@@ -125,7 +88,7 @@ def robot_ir(old_motor1, old_motor_2, adjuster, time, flag):
 # Line tracking code
 
 from PID import PID as pid
-from math import atan
+import math
 
 setupOptiSensor()
 
@@ -173,16 +136,14 @@ def getErrorLeft():
     return error
 
 while True:
-    sampling_rate = 100
+    sampling_rate = 1
     speed = 1
-    try:
-        pid.init(pid, Kp=0.01, Ki=0.001, Kd=0.001)
-        output = pid.Update(pid, getErrorLeft() + getErrorRight)
-        time.sleep(1/sampling_rate)
-        print(output)
-        robot_ir(speed, speed, atan(output) + speed, 1, 1)
-    except:
-        robot_stop()
+    pid.init(pid, Kp=0.01, Ki=0.01, Kd=0.001)
+    output = pid.Update(pid, (getErrorLeft() + getErrorRight()))
+    time.sleep(1/sampling_rate)
+    print(output)
+    robot_ir(speed, speed, math.atan(output)/math.pi + speed, 10, 1)
+    robot_stop
 destroy()
 
 
