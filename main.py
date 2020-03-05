@@ -80,7 +80,7 @@ def robot_ir(old_motor1, old_motor_2, adjuster, time, flag):
         elif adjuster>0:
             robot_move(old_motor1-adjuster, old_motor_2, time)
         elif adjuster<0:
-            robot_move(old_motor1, old_motor_2-adjuster, time)
+            robot_move(old_motor1, old_motor_2+adjuster, time)
     else:
         robot_stop()
 
@@ -117,7 +117,7 @@ while True:
     output = pid.Update(pid, (getErrorLeft() + getErrorRight()))
     time.sleep(1/sampling_rate)
     print(output)
-    robot_ir(speed, speed, math.atan(output)/math.pi + speed, 10, 1)
+    robot_ir(speed, speed, math.atan(output)/math.pi, 10, 1)
     robot_stop
 destroy()
 
