@@ -47,12 +47,14 @@ import time
 
 GPIO.setwarnings(False)
 
+rightIRTrackingPinL = 12
+rightIRTrackingPinR = 16
 
-#IRTrackingPinLL = 12
-IRTrackingPinL = 12
-IRTrackingPinR = 16
-#IRTrackingPinRR = 15
-pins = [IRTrackingPinL, IRTrackingPinR]
+leftIRTrackingPinL = 20
+leftIRTrackingPinR = 21
+
+leftPins = [leftIRTrackingPinL, leftIRTrackingPinR]
+rightPins = [rightIRTrackingPinL, rightIRTrackingPinR]
 
 def setupOptiSensor():
     GPIO.setmode(GPIO.BCM) # Set the GPIO pins as BCM
@@ -62,7 +64,7 @@ def setupOptiSensor():
     # GPIO.setup(IRTrackingPinRR, GPIO.IN, pull_up_down=GPIO.PUD_UP)
 
 
-def getOptiValues():
+def getOptiValues(pins):
     value = 0
     for pin in pins:
         value = value << 1
@@ -86,8 +88,8 @@ def destroy():
 
 # motor1/M2 is RIGHT wheel
 # motor2/M1 is LEFT wheel
-import time
-from adafruit_motorkit import MotorKit
+# import time
+# from adafruit_motorkit import MotorKit
 kit = MotorKit()
 kit.motor1.throttle = 1.0 # to throttle motor forward
 time.sleep(0.5)
@@ -95,8 +97,8 @@ kit.motor1.throttle = 0 #to stop the motor
 
 
 #Version 2: stepper motor (TESTED & BUGGY - motor 2 alternates between rotating forward and backwards when running kit.stepper2.onestep() )
-import time
-from adafruit_motorkit import MotorKit
+# import time
+# from adafruit_motorkit import MotorKit
 
 kit = MotorKit()
 
@@ -114,35 +116,98 @@ for i in range(100):
 # Line tracking code
 
 from PID import PID as pid
+from math import atan
+import time
+from adafruit_motorkit import MotorKit
+import adafruit_motor import stepper
+
+def robot_stop():
+    kit.motor1.throttle = 0.0
+    kit.motor2.throttle = 0.0
+
+def robot_move(motor1_config, motor2_config, time):
+    for i in range(time):    
+        kit.motor1.throttle = motor1_config
+        kit.motor2.throttle = motor2_config
+    robot_stop()
+
+def robot_dir(direction, time):
+    if direction == "forward":
+         robot_move(1.0, 1.0, time)
+    elif direction == "backward":
+         robot_move(-1.0, -1.0, time)
+    elif direction == "left":
+         robot_move(0.5, -0.5, time)
+    elif direction == "right":
+         robot_move(-0.5, 0.5, time)         
+
+def robot_ir(old_motor1, old_motor_2, adjuster, time, flag):
+    if flag == 1:
+        if adjuster==0:
+            robot_move(old_motor1, old_motor_2)
+        elif adjuster>0:
+            robot_move(old_motor1-adjuster, old_motor_2, time)
+        elif adjuster<0:
+            robot_move(old_motor1, old_motor_2-adjuster, time)    
+    else:
+        robot_stop()
 
 setupOptiSensor()
 
 error = 0
 
-def getError():
-    data = getOptiValues()
+def getErrorRight():
+    dataR = getOptiValues(rightPins)
     error = 0.0
-    if data is 0b01:
+    if dataR is 0b01:
         print("straight")
         error = 0
-    elif data is 0b10:
+    elif dataR is 0b10:
         print("too left")
         error = 1
-    elif data is 0b00:
+    elif dataR is 0b00:
         print("a bit left")
         error = 0.5
-    elif data is 0b11:
+    elif dataR is 0b11:
         print("a bit right")
         error = -0.5
     else:
         print("invalid data")
         return 0
     return error
+
+def getErrorLeft():
+    dataL = getOptiValues(leftPins)
+    error = 0.0
+    if dataL is 0b10:
+        print("straight")
+        error = 0
+    elif dataL is 0b01:
+        print("too right")
+        error = -1
+    elif dataL is 0b00:
+        print("a bit right")
+        error = -0.5
+    elif dataL is 0b11:
+        print("a bit left")
+        error = 0.5
+    else:
+        print("invalid data")
+        return 0
+    return error
+
 while True:
-    pid.init(pid, Kp=0.01, Ki=0.001, Kd=0.001)
-    output = pid.Update(pid, getError())
-    time.sleep(0.01)
-    print(output)
+    try:
+        pid.init(pid, Kp=0.01, Ki=0.001, Kd=0.001)
+        output = pid.Update(pid, getErrorLeft() + getErrorRight)
+        time.sleep(0.01)
+        print(output)
+        robot_ir(1, 1, atan(output), 1, 1)
+    except:
+        robot_stop()
+destroy()
+
+
 #-----------------------------------------------------------------#
 # Twitter code
 
