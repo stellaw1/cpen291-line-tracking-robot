@@ -2,9 +2,12 @@ import
 import glob
 import time
 from bluetooth import *
+import math
+import P1_FInal as motor
 
-GPIO.setmode(GPIO.BCM)
-GPIO.setup(17, GPIO.OUT)
+SPEED_INCREMENT = 0.2
+MAX_FORWARD = 1
+MAX_BACKWARDS = -1
 
 server_sock=BluetoothSocket( RFCOMM )
 server_sock.bind(("",PORT_ANY))
@@ -29,17 +32,44 @@ while True:
         data = client_sock.recv(1024)
         if len(data) == 0: 
             break
-		angle = int(data)
+       
+        motor_vals = get_data(data)
+        speeds = get_speeds(motor_vals)
+
+		left_speed = speeds[0]
+        right_speed = speeds[1]
+
+        print(left_speed, right_speed)
         
 	except IOError:
 		pass
 
 	except KeyboardInterrupt:
-
 		print "disconnected"
-
 		client_sock.close()
 		server_sock.close()
 		print "all done"
-
 		break
+
+    def get_data(data):
+        tup = tuple(filter(None, data.split(',')))
+        return tup
+
+    def get_speeds(data):
+        left_speed = 0
+        right_speed = 0
+        angle = data[0]
+        if angle <= 90:
+            left_speed = MAX_FORWARD
+            right_speed = (angle % 91) / 90 * MAX_FORWARD
+        elif angle <= 180:
+            right_speed = MAX_FORWARD
+            left_speed = ((angle - 90) % 91) / 90 * MAX_FORWARD
+        elif angle <= 270:
+            right_speed = MAX_BACKWARDS
+            left_speed = ((angle - 180) % 91) / 90 * MAX_BACKWARDS
+        else:
+            left_speed = MAX_BACKWARDS
+            right_speed = ((angle - 270) % 91) / 90 * MAX_BACKWARDS
+        
+        return (left_speed, right_speed)
