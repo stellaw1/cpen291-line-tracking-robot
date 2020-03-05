@@ -49,10 +49,8 @@ def robot_ir(old_motor1, old_motor_2, adjuster, time, flag):
         if adjuster==0:
             robot_move(old_motor1, old_motor_2, time)
         elif adjuster>0:
-            robot_move(old_motor1-adjuster, old_motor_2, time)
+            robot_move(-adjuster, old_motor_2, time)
         elif adjuster<0:
-            robot_move(old_motor1, old_motor_2+adjuster, time)
+            robot_move(old_motor1, -adjuster, time)
     else:
         robot_stop()
-
-robot_move(0.4, 0.4, 2)
