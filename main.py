@@ -82,7 +82,48 @@ def robot_ir(old_motor1, old_motor_2, adjuster, time, flag):
             robot_move(old_motor1, -adjuster, time) #try = 0 case
     else:
         robot_stop()
+'''
+Line tracking code alternative:
 
+import RPi.GPIO as GPIO
+import time
+
+GPIO.setwarnings(False)
+
+rightIRTrackingPinL = 12
+rightIRTrackingPinR = 16
+
+leftIRTrackingPinL = 20
+leftIRTrackingPinR = 21
+
+leftPins = [leftIRTrackingPinL, leftIRTrackingPinR]
+rightPins = [rightIRTrackingPinL, rightIRTrackingPinR]
+
+def setupOptiSensor():
+    GPIO.setmode(GPIO.BCM) # Set the GPIO pins as BCM
+    GPIO.setup(leftIRTrackingPinL, GPIO.IN, pull_up_down=GPIO.PUD_UP)
+    GPIO.setup(leftIRTrackingPinR, GPIO.IN, pull_up_down=GPIO.PUD_UP)
+    GPIO.setup(rightIRTrackingPinL, GPIO.IN, pull_up_down=GPIO.PUD_UP)
+    GPIO.setup(rightIRTrackingPinR, GPIO.IN, pull_up_down=GPIO.PUD_UP)
+
+try:
+    setupOptiSensor()
+	while True:
+		if not GPIO.input(leftIRTrackingPinR):
+			print("Robot is straying off to the right, move left captain!")
+		elif not GPIO.input(rightIRTrackingPinL):
+			print("Robot is straying off to the left, move right captain!")
+		else:
+			print("Following the line!")
+		sleep(0.2)
+except:
+	GPIO.cleanup()
+
+#But what factor should it be moved by???
+
+'''
+        
+        
 #-----------------------------------------------------------------#
 # Line tracking code
 
@@ -128,6 +169,7 @@ while True:
     robot_stop()
 destroy()
 
+#may need to modify adjuster
 
 #-----------------------------------------------------------------#
 # Twitter code
