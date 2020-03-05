@@ -95,7 +95,7 @@ def robot_stop():
     kit.motor2.throttle = 0.0
 
 def robot_move(motor1_config, motor2_config, time):
-    for i in range(time):    
+    for i in range(time):
         kit.motor1.throttle = motor1_config
         kit.motor2.throttle = motor2_config
     robot_stop()
@@ -108,7 +108,7 @@ def robot_dir(direction, time):
     elif direction == "left":
          robot_move(0.5, -0.5, time)
     elif direction == "right":
-         robot_move(-0.5, 0.5, time)         
+         robot_move(-0.5, 0.5, time)
 
 def robot_ir(old_motor1, old_motor_2, adjuster, time, flag):
     if flag == 1:
@@ -117,7 +117,7 @@ def robot_ir(old_motor1, old_motor_2, adjuster, time, flag):
         elif adjuster>0:
             robot_move(old_motor1-adjuster, old_motor_2, time)
         elif adjuster<0:
-            robot_move(old_motor1, old_motor_2-adjuster, time)    
+            robot_move(old_motor1, old_motor_2-adjuster, time)
     else:
         robot_stop()
 
@@ -130,46 +130,21 @@ from math import atan
 setupOptiSensor()
 
 error = 0
-
+dictRightTurns = {0b00: "a bit left", 0b01: "straight", 0b10: "too left", 0b11: "a bit right"}
+dictRightErrors = {0b00: 0.5, 0b01: 0, 0b10: 1, 0b11: -.5}dictRightTurns = {0b00: "a bit left", 0b01: "straight", 0b10: "too left", 0b11: "a bit right"}
+dictLeftTurns = {0b00: "a bit right", 0b10: "straight", 0b01: "too right", 0b11: "a bit left"}
+dictLeftErrors = {0b00: -0.5, 0b10: 0, 0b01: -1, 0b11: .5}
 def getErrorRight():
     dataR = getOptiValues(rightPins)
-    error = 0.0
-    if dataR is 0b01:
-        print("straight")
-        error = 0
-    elif dataR is 0b10:
-        print("too left")
-        error = 1
-    elif dataR is 0b00:
-        print("a bit left")
-        error = 0.5
-    elif dataR is 0b11:
-        print("a bit right")
-        error = -0.5
-    else:
-        print("invalid data")
-        return 0
+    print(dictRightTurns[dataR])
+    error = dictRightErrors[dataR]
     return error
 
 def getErrorLeft():
     # dataL = getOptiValues(leftPins)
     dataL = 0b10
-    error = 0.0
-    if dataL is 0b10:
-        print("straight")
-        error = 0
-    elif dataL is 0b01:
-        print("too right")
-        error = -1
-    elif dataL is 0b00:
-        print("a bit right")
-        error = -0.5
-    elif dataL is 0b11:
-        print("a bit left")
-        error = 0.5
-    else:
-        print("invalid data")
-        return 0
+    print(dictRightTurns[dataL])
+    error = dictRightErrors[dataL]
     return error
 
 while True:
