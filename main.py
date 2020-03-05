@@ -109,14 +109,18 @@ def getErrorLeft():
     error = dictRightErrors[dataL]
     return error
 
+#Still need to account for case when reach end of line 
+#Crossover still needs to be handled 
+
+flag = 1
 while True:
     sampling_rate = 10
-    speed = 0.3
+    speed = 0.3  
     pid.init(pid, Kp=0.01, Ki=0.01, Kd=0.001)
     output = pid.Update(pid, getErrorRight())
     time.sleep(1/sampling_rate)
     print(output)
-    robot_ir(speed, speed, math.atan(output)/math.pi*speed, 1, 1)
+    robot_ir(speed, speed, math.atan(output)/math.pi*speed, 1, flag)
     robot_stop()
 destroy()
 
