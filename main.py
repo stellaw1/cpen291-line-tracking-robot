@@ -93,46 +93,21 @@ import math
 setupOptiSensor()
 
 error = 0
-
+dictRightTurns = {0b00: "a bit left", 0b01: "straight", 0b10: "too left", 0b11: "a bit right"}
+dictRightErrors = {0b00: 0.5, 0b01: 0, 0b10: 1, 0b11: -.5}
+dictLeftTurns = {0b00: "a bit right", 0b10: "straight", 0b01: "too right", 0b11: "a bit left"}
+dictLeftErrors = {0b00: -0.5, 0b10: 0, 0b01: -1, 0b11: .5}
 def getErrorRight():
     dataR = getOptiValues(rightPins)
-    error = 0.0
-    if dataR is 0b01:
-        print("straight")
-        error = 0
-    elif dataR is 0b10:
-        print("too left")
-        error = 1
-    elif dataR is 0b00:
-        print("a bit left")
-        error = 0.5
-    elif dataR is 0b11:
-        print("a bit right")
-        error = -0.5
-    else:
-        print("invalid data")
-        return 0
+    print(dictRightTurns[dataR])
+    error = dictRightErrors[dataR]
     return error
 
 def getErrorLeft():
     # dataL = getOptiValues(leftPins)
     dataL = 0b10
-    error = 0.0
-    if dataL is 0b10:
-        print("straight")
-        error = 0
-    elif dataL is 0b01:
-        print("too right")
-        error = -1
-    elif dataL is 0b00:
-        print("a bit right")
-        error = -0.5
-    elif dataL is 0b11:
-        print("a bit left")
-        error = 0.5
-    else:
-        print("invalid data")
-        return 0
+    print(dictRightTurns[dataL])
+    error = dictRightErrors[dataL]
     return error
 
 while True:
