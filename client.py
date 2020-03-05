@@ -5,7 +5,6 @@ from bluetooth import *
 import math
 import P1_FInal as motor
 
-SPEED_INCREMENT = 0.2
 MAX_FORWARD = 1
 MAX_BACKWARDS = -1
 
@@ -17,7 +16,7 @@ port = server_sock.getsockname()[1]
 
 uuid = "94f39d29-7d6d-437d-973b-fba39e49d4ee"
 
-advertise_service( server_sock, "AquaPiServer",
+advertise_service( server_sock, "LineTrackerServer",
                    service_id = uuid,
                    service_classes = [ uuid, SERIAL_PORT_CLASS ],
                    profiles = [ SERIAL_PORT_PROFILE ], 
@@ -40,6 +39,8 @@ while True:
         right_speed = speeds[1]
 
         print(left_speed, right_speed)
+
+        motor.robot_move(left_speed, right_speed, 0.1)
         
 	except IOError:
 		pass

@@ -17,7 +17,7 @@
 #(1==full speed fwd, -1==full speed bwd)
 #motor1 = right
 #motor2 = left
-import time as tm
+import time
 from adafruit_motorkit import MotorKit
 from adafruit_motor import stepper
 
@@ -25,13 +25,13 @@ kit = MotorKit()
 
 def robot_stop():
     kit.motor1.throttle = 0.0
+    time.sleep(0.1)
     kit.motor2.throttle = 0.0
 
-def robot_move(motor1, motor2, time):
-    for i in range(time):
-        kit.motor1.throttle = motor1
-        tm.sleep(0.1)
-        kit.motor2.throttle = motor2
+def robot_move(motor1, motor2, delay):
+    kit.motor1.throttle = motor1
+    kit.motor2.throttle = motor2
+    time.sleep(delay)
     robot_stop()
 
 def robot_dir(direction, time):
@@ -47,12 +47,12 @@ def robot_dir(direction, time):
 def robot_ir(old_motor1, old_motor_2, adjuster, time, flag):
     if flag == 1:
         if adjuster==0:
-            robot_move(old_motor1, old_motor_2)
+            robot_move(old_motor1, old_motor_2, time)
         elif adjuster>0:
             robot_move(old_motor1-adjuster, old_motor_2, time)
         elif adjuster<0:
-            robot_move(old_motor1, old_motor_2-adjuster, time)
+            robot_move(old_motor1, old_motor_2+adjuster, time)
     else:
         robot_stop()
 
-robot_move(-1, 1, 100)
+robot_move(0.4, 0.4, 2)

@@ -50,17 +50,16 @@ def destroy():
 from adafruit_motorkit import MotorKit
 from adafruit_motor import stepper
 
-
 kit = MotorKit()
 
 def robot_stop():
     kit.motor1.throttle = 0.0
     kit.motor2.throttle = 0.0
 
-def robot_move(motor1_config, motor2_config, time):
-    for i in range(time):
-        kit.motor1.throttle = motor1_config
-        kit.motor2.throttle = motor2_config
+def robot_move(motor1, motor2, delay):
+    kit.motor1.throttle = motor1
+    kit.motor2.throttle = motor2
+    time.sleep(delay)
     robot_stop()
 
 def robot_dir(direction, time):
@@ -76,7 +75,7 @@ def robot_dir(direction, time):
 def robot_ir(old_motor1, old_motor_2, adjuster, time, flag):
     if flag == 1:
         if adjuster==0:
-            robot_move(old_motor1, old_motor_2)
+            robot_move(old_motor1, old_motor_2, time)
         elif adjuster>0:
             robot_move(old_motor1-adjuster, old_motor_2, time)
         elif adjuster<0:
@@ -111,14 +110,14 @@ def getErrorLeft():
     return error
 
 while True:
-    sampling_rate = 1
-    speed = 1
+    sampling_rate = 10
+    speed = 0.3
     pid.init(pid, Kp=0.01, Ki=0.01, Kd=0.001)
-    output = pid.Update(pid, (getErrorLeft() + getErrorRight()))
+    output = pid.Update(pid, getErrorRight())
     time.sleep(1/sampling_rate)
     print(output)
-    robot_ir(speed, speed, math.atan(output)/math.pi, 10, 1)
-    robot_stop
+    robot_ir(speed, speed, math.atan(output)/math.pi*speed, 1, 1)
+    robot_stop()
 destroy()
 
 
