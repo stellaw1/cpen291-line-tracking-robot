@@ -58,10 +58,10 @@ rightPins = [rightIRTrackingPinL, rightIRTrackingPinR]
 
 def setupOptiSensor():
     GPIO.setmode(GPIO.BCM) # Set the GPIO pins as BCM
-    # GPIO.setup(IRTrackingPinLL, GPIO.IN, pull_up_down=GPIO.PUD_UP)
-    GPIO.setup(IRTrackingPinL, GPIO.IN, pull_up_down=GPIO.PUD_UP)
-    GPIO.setup(IRTrackingPinR, GPIO.IN, pull_up_down=GPIO.PUD_UP)
-    # GPIO.setup(IRTrackingPinRR, GPIO.IN, pull_up_down=GPIO.PUD_UP)
+    GPIO.setup(leftIRTrackingPinL, GPIO.IN, pull_up_down=GPIO.PUD_UP)
+    GPIO.setup(leftIRTrackingPinR, GPIO.IN, pull_up_down=GPIO.PUD_UP)
+    GPIO.setup(rightIRTrackingPinL, GPIO.IN, pull_up_down=GPIO.PUD_UP)
+    GPIO.setup(rightIRTrackingPinR, GPIO.IN, pull_up_down=GPIO.PUD_UP)
 
 
 def getOptiValues(pins):
@@ -83,50 +83,19 @@ def destroy():
 #-----------------------------------------------------------------#
 # Motors code
 
-
-#Version 1: motor code (TESTED & WORKING)
-
-# motor1/M2 is RIGHT wheel
-# motor2/M1 is LEFT wheel
-# import time
-# from adafruit_motorkit import MotorKit
-kit = MotorKit()
-kit.motor1.throttle = 1.0 # to throttle motor forward
-time.sleep(0.5)
-kit.motor1.throttle = 0 #to stop the motor
-
-
-#Version 2: stepper motor (TESTED & BUGGY - motor 2 alternates between rotating forward and backwards when running kit.stepper2.onestep() )
-# import time
-# from adafruit_motorkit import MotorKit
-
-kit = MotorKit()
-
-for i in range(100):
-    kit.stepper1.onestep()
-    time.sleep(0.01)
-
-
-
-
-
-
-
-#-----------------------------------------------------------------#
-# Line tracking code
-
-from PID import PID as pid
-from math import atan
 import time
 from adafruit_motorkit import MotorKit
 import adafruit_motor import stepper
+
+
+kit = MotorKit()
 
 def robot_stop():
     kit.motor1.throttle = 0.0
     kit.motor2.throttle = 0.0
 
 def robot_move(motor1_config, motor2_config, time):
-    for i in range(time):    
+    for i in range(time):
         kit.motor1.throttle = motor1_config
         kit.motor2.throttle = motor2_config
     robot_stop()
@@ -139,7 +108,7 @@ def robot_dir(direction, time):
     elif direction == "left":
          robot_move(0.5, -0.5, time)
     elif direction == "right":
-         robot_move(-0.5, 0.5, time)         
+         robot_move(-0.5, 0.5, time)
 
 def robot_ir(old_motor1, old_motor_2, adjuster, time, flag):
     if flag == 1:
@@ -148,61 +117,45 @@ def robot_ir(old_motor1, old_motor_2, adjuster, time, flag):
         elif adjuster>0:
             robot_move(old_motor1-adjuster, old_motor_2, time)
         elif adjuster<0:
-            robot_move(old_motor1, old_motor_2-adjuster, time)    
+            robot_move(old_motor1, old_motor_2-adjuster, time)
     else:
         robot_stop()
+
+#-----------------------------------------------------------------#
+# Line tracking code
+
+from PID import PID as pid
+from math import atan
 
 setupOptiSensor()
 
 error = 0
-
+dictRightTurns = {0b00: "a bit left", 0b01: "straight", 0b10: "too left", 0b11: "a bit right"}
+dictRightErrors = {0b00: 0.5, 0b01: 0, 0b10: 1, 0b11: -.5}
+dictLeftTurns = {0b00: "a bit right", 0b10: "straight", 0b01: "too right", 0b11: "a bit left"}
+dictLeftErrors = {0b00: -0.5, 0b10: 0, 0b01: -1, 0b11: .5}
 def getErrorRight():
     dataR = getOptiValues(rightPins)
-    error = 0.0
-    if dataR is 0b01:
-        print("straight")
-        error = 0
-    elif dataR is 0b10:
-        print("too left")
-        error = 1
-    elif dataR is 0b00:
-        print("a bit left")
-        error = 0.5
-    elif dataR is 0b11:
-        print("a bit right")
-        error = -0.5
-    else:
-        print("invalid data")
-        return 0
+    print(dictRightTurns[dataR])
+    error = dictRightErrors[dataR]
     return error
 
 def getErrorLeft():
-    dataL = getOptiValues(leftPins)
-    error = 0.0
-    if dataL is 0b10:
-        print("straight")
-        error = 0
-    elif dataL is 0b01:
-        print("too right")
-        error = -1
-    elif dataL is 0b00:
-        print("a bit right")
-        error = -0.5
-    elif dataL is 0b11:
-        print("a bit left")
-        error = 0.5
-    else:
-        print("invalid data")
-        return 0
+    # dataL = getOptiValues(leftPins)
+    dataL = 0b10
+    print(dictRightTurns[dataL])
+    error = dictRightErrors[dataL]
     return error
 
 while True:
+    sampling_rate = 100
+    speed = 1
     try:
         pid.init(pid, Kp=0.01, Ki=0.001, Kd=0.001)
         output = pid.Update(pid, getErrorLeft() + getErrorRight)
-        time.sleep(0.01)
+        time.sleep(1/sampling_rate)
         print(output)
-        robot_ir(1, 1, atan(output), 1, 1)
+        robot_ir(speed, speed, atan(output) + speed, 1, 1)
     except:
         robot_stop()
 destroy()
