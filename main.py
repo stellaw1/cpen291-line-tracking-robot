@@ -131,7 +131,7 @@ setupOptiSensor()
 
 error = 0
 dictRightTurns = {0b00: "a bit left", 0b01: "straight", 0b10: "too left", 0b11: "a bit right"}
-dictRightErrors = {0b00: 0.5, 0b01: 0, 0b10: 1, 0b11: -.5}dictRightTurns = {0b00: "a bit left", 0b01: "straight", 0b10: "too left", 0b11: "a bit right"}
+dictRightErrors = {0b00: 0.5, 0b01: 0, 0b10: 1, 0b11: -.5}
 dictLeftTurns = {0b00: "a bit right", 0b10: "straight", 0b01: "too right", 0b11: "a bit left"}
 dictLeftErrors = {0b00: -0.5, 0b10: 0, 0b01: -1, 0b11: .5}
 def getErrorRight():
