@@ -120,6 +120,10 @@ while True:
     output = pid.Update(pid, getErrorRight())
     time.sleep(1/sampling_rate)
     print(output)
+    if output == 0:
+        flag = 0
+    else 
+        flag = 1
     robot_ir(speed, speed, math.atan(output)/math.pi*speed, 1, flag)
     robot_stop()
 destroy()
