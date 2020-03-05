@@ -124,7 +124,7 @@ while True:
         flag = 0
     else 
         flag = 1
-    robot_ir(speed, speed, math.atan(output)/math.pi*speed, 1, flag)
+    robot_ir(speed, speed, math.atan(output)/math.pi*speed, 1/sampling_rate, flag)
     robot_stop()
 destroy()
 
