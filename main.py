@@ -83,43 +83,75 @@ def robot_ir(old_motor1, old_motor_2, adjuster, time, flag):
     else:
         robot_stop()
 '''
-Line tracking code alternative:
+from adafruit_motorkit import MotorKit
+from adafruit_motor import stepper
+
+kit = MotorKit()
+
+def robot_stop():
+    kit.motor1.throttle = 0.0
+    kit.motor2.throttle = 0.0
+
+def robot_move(motor1, motor2, delay):
+    for i in range (delay):
+        kit.motor1.throttle = motor1
+        kit.motor2.throttle = motor2
+    time.sleep(delay)
+    robot_stop()
+
+def robot_dir(direction, time):
+    if direction == "forward":
+         robot_move(1.0, 1.0, time)
+    elif direction == "backward":
+         robot_move(-1.0, -1.0, time)
+    elif direction == "left":
+         robot_move(0.5, -0.5, time)
+    elif direction == "right":
+         robot_move(-0.5, 0.5, time)
+
+def robot_ir(old_motor1, old_motor_2, adjuster, time, flag):
+    if flag == 1:
+        if adjuster==0:
+            robot_move(old_motor1, old_motor_2, time)
+        elif adjuster>0:
+            robot_move(-adjuster, old_motor_2, time) #try = 0 case
+        elif adjuster<0:
+            robot_move(old_motor1, -adjuster, time) #try = 0 case
+    else:
+        robot_stop()
 
 import RPi.GPIO as GPIO
 import time
-
 GPIO.setwarnings(False)
-
 rightIRTrackingPinL = 12
 rightIRTrackingPinR = 16
-
 leftIRTrackingPinL = 20
 leftIRTrackingPinR = 21
-
 leftPins = [leftIRTrackingPinL, leftIRTrackingPinR]
 rightPins = [rightIRTrackingPinL, rightIRTrackingPinR]
-
 def setupOptiSensor():
     GPIO.setmode(GPIO.BCM) # Set the GPIO pins as BCM
-    GPIO.setup(leftIRTrackingPinL, GPIO.IN, pull_up_down=GPIO.PUD_UP)
     GPIO.setup(leftIRTrackingPinR, GPIO.IN, pull_up_down=GPIO.PUD_UP)
     GPIO.setup(rightIRTrackingPinL, GPIO.IN, pull_up_down=GPIO.PUD_UP)
-    GPIO.setup(rightIRTrackingPinR, GPIO.IN, pull_up_down=GPIO.PUD_UP)
 
-try:
-    setupOptiSensor()
-	while True:
-		if not GPIO.input(leftIRTrackingPinR):
-			print("Robot is straying off to the right, move left captain!")
-		elif not GPIO.input(rightIRTrackingPinL):
-			print("Robot is straying off to the left, move right captain!")
-		else:
-			print("Following the line!")
-		sleep(0.2)
-except:
-	GPIO.cleanup()
+
+setupOptiSensor()
+while True:
+    if not GPIO.input(rightIRTrackingPinL):
+        print("Robot is straying off to the right, move left captain!" + str(GPIO.input(rightIRTrackingPinL)))
+        while not GPIO.input(rightIRTrackingPinL):
+            robot_move(0.2, -0.2, 2)    
+    elif not GPIO.input(leftIRTrackingPinR):
+        print("Robot is straying off to the left, move right captain!" + str(GPIO.input(leftIRTrackingPinR)))
+        while not GPIO.input(leftIRTrackingPinR):
+            robot_move(-0.2, 0.2, 2)
+    else:
+        print("Following the line!")
+        robot_move(0.2, 0.2, 2)
+    time.sleep(0.1)
 
 #But what factor should it be moved by???
+
 
 '''
         
