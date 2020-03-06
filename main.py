@@ -129,25 +129,29 @@ leftIRTrackingPinL = 20
 leftIRTrackingPinR = 21
 leftPins = [leftIRTrackingPinL, leftIRTrackingPinR]
 rightPins = [rightIRTrackingPinL, rightIRTrackingPinR]
+
+
 def setupOptiSensor():
     GPIO.setmode(GPIO.BCM) # Set the GPIO pins as BCM
+    GPIO.setup(leftIRTrackingPinL, GPIO.IN, pull_up_down=GPIO.PUD_UP)
     GPIO.setup(leftIRTrackingPinR, GPIO.IN, pull_up_down=GPIO.PUD_UP)
     GPIO.setup(rightIRTrackingPinL, GPIO.IN, pull_up_down=GPIO.PUD_UP)
+    GPIO.setup(rightIRTrackingPinR, GPIO.IN, pull_up_down=GPIO.PUD_UP)
 
 
 setupOptiSensor()
 while True:
-    if not GPIO.input(rightIRTrackingPinL):
-        print("Robot is straying off to the right, move left captain!" + str(GPIO.input(rightIRTrackingPinL)))
-        while not GPIO.input(rightIRTrackingPinL):
-            robot_move(0.2, -0.2, 2)    
-    elif not GPIO.input(leftIRTrackingPinR):
+    if not GPIO.input(rightIRTrackingPinL) and not GPIO.input(rightIRTrackingPinR) :
+        print("Robot is straying off to the right, move left captain!")
+
+    elif not GPIO.input(leftIRTrackingPinR) and not GPIO.input(leftIRTrackingPinL) :
         print("Robot is straying off to the left, move right captain!" + str(GPIO.input(leftIRTrackingPinR)))
-        while not GPIO.input(leftIRTrackingPinR):
-            robot_move(-0.2, 0.2, 2)
+       
+    elif not GPIO.input(leftIRTrackingPinR) and not GPIO.input(leftIRTrackingPinL) and not GPIO.input(rightIRTrackingPinL) and not GPIO.input(rightIRTrackingPinR) :     
+        print("Stop!")
     else:
         print("Following the line!")
-        robot_move(0.2, 0.2, 2)
+      
     time.sleep(0.1)
 
 #But what factor should it be moved by???
