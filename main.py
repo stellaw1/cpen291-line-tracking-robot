@@ -141,6 +141,7 @@ def main_robot(flag):
     print(output)
     if (pid.gap(pid, 100)):
         flag = 0
-        return flag
+        return (flag, 2*math.atan(output)/math.pi)
     robot_ir(speed, speed, 2*math.atan(output)/math.pi*speed, 1/sampling_rate, flag)
     time.sleep(0.001)
+    return (flag, 2*math.atan(output)/math.pi)
