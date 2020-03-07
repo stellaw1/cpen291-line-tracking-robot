@@ -76,21 +76,21 @@ kit = MotorKit()
 
 def robot_stop():
     kit.motor1.throttle = 0.0
-    kit.motor2.throttle = 0.0
+    kit.motor4.throttle = 0.0
 
-def robot_move(motor1, motor2, delay):
+def robot_move(motor1, motor4, delay):
     kit.motor1.throttle = motor1
-    kit.motor2.throttle = motor2
+    kit.motor4.throttle = motor4
     time.sleep(delay)
     robot_stop()
 
-def robot_ir(old_motor1, old_motor_2, adjuster, times, flag):
+def robot_ir(old_motor1, old_motor_4, adjuster, times, flag):
     if flag == 1:
         if adjuster==0:
             robot_move(1, 1, times)
             #time.sleep(0.001)
         elif adjuster>0:
-            robot_move(-adjuster, old_motor_2, times) #try = 0 case
+            robot_move(-adjuster, old_motor_4, times) #try = 0 case
             time.sleep(0.001)
         elif adjuster<0:
             robot_move(old_motor1, adjuster, times) #try = 0 case
