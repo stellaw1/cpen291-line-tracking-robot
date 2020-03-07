@@ -1,6 +1,42 @@
 import RPi.GPIO as GPIO
 import time
 
+#-----------------------------------------------------------------#
+# PID controller code
+
+class PID:
+
+    def init(self, Kp, Ki, Kd):
+        self.Kp = Kp
+        self.Ki = Ki
+        self.Kd = Kd
+
+        self.Ci = 0
+
+        self.previous_time = time.time()
+        self.previous_error = 0
+        self.gap_count = 0
+
+    def update(self, error):
+        de = error - self.previous_error
+        dt = time.time() - self.previous_time
+        self.Ci += error * dt
+        
+        if dt <= 0.0:
+            return 0
+        
+        output = self.Kp * error + self.Kd * de/dt + self.Ki * self.Ci
+        
+        if (output is 0):
+            self.gap_count += 1
+        else:
+            self.gap_count = 0
+
+        return output
+
+#-----------------------------------------------------------------#
+# Sensors code
+
 GPIO.setwarnings(False)
 
 rightIRTrackingPinL = 12
@@ -31,11 +67,6 @@ def getOptiValues(pins):
 def destroy():
     GPIO.cleanup() # Release resource
 
-
-
-
-
-
 #-----------------------------------------------------------------#
 # Motors code
 from adafruit_motorkit import MotorKit
@@ -53,16 +84,6 @@ def robot_move(motor1, motor2, delay):
     time.sleep(delay)
     robot_stop()
 
-def robot_dir(direction, time):
-    if direction == "forward":
-         robot_move(1.0, 1.0, time)
-    elif direction == "backward":
-         robot_move(-1.0, -1.0, time)
-    elif direction == "left":
-         robot_move(0.5, -0.5, time)
-    elif direction == "right":
-         robot_move(-0.5, 0.5, time)
-
 def robot_ir(old_motor1, old_motor_2, adjuster, times, flag):
     if flag == 1:
         if adjuster==0:
@@ -72,30 +93,27 @@ def robot_ir(old_motor1, old_motor_2, adjuster, times, flag):
             robot_move(-adjuster, old_motor_2, times) #try = 0 case
             time.sleep(0.001)
         elif adjuster<0:
-            robot_move(old_motor1, -adjuster, times) #try = 0 case
+            robot_move(old_motor1, adjuster, times) #try = 0 case
             time.sleep(0.001)
     else:
         robot_stop()
 
-
 #-----------------------------------------------------------------#
 # Line tracking code
 
-from PID import PID as pid
 import math
 
 setupOptiSensor()
 
-error = 0
-dictRightTurns = {0b00: "a bit left", 0b01: "straight", 0b10: "too left", 0b11: "a bit right"}
-dictRightErrors = {0b00: 0.7, 0b01: 0, 0b10: 1, 0b11: -.7}
-dictLeftTurns = {0b00: "a bit right", 0b10: "straight", 0b01: "too right", 0b11: "a bit left"}
-dictLeftErrors = {0b00: -0.7, 0b10: 0, 0b01: -1, 0b11: .7}
+# dictRightTurns = {0b00: "a bit left", 0b01: "straight", 0b10: "too left", 0b11: "a bit right"}
+dictLeftErrors = {0b00: 1, 0b01: 0, 0b10: 1.5, 0b11: -1}
+# dictLeftTurns = {0b00: "a bit right", 0b10: "straight", 0b01: "too right", 0b11: "a bit left"}
+dictRightErrors = {0b00: -1, 0b10: 0, 0b01: -1.5, 0b11: 1}
 def getErrorRight():
     dataR = getOptiValues(rightPins)
     #print(dictRightTurns[dataR])
     print(dataR)
-    error = dictLeftErrors[dataR]
+    error = dictRightErrors[dataR]
     return error
 
 def getErrorLeft():
@@ -103,7 +121,7 @@ def getErrorLeft():
     #dataL = 0b10
     #print(dictRightTurns[dataL])
     print(dataL)
-    error = dictRightErrors[dataL]
+    error = dictLeftErrors[dataL]
     return error
 
 #Still need to account for case when reach end of line 
@@ -113,12 +131,13 @@ flag = 1
 while True:
     sampling_rate = 500
     speed = 1
-    pid.init(pid, Kp=0.001, Ki=0.001, Kd=0.001)
-    output = pid.Update(pid, getErrorRight()+getErrorLeft())
+    PID.init(PID, Kp=0.001, Ki=0.001, Kd=0.001)
+    output = PID.Update(PID, getErrorRight()+getErrorLeft())
     time.sleep(1/sampling_rate)
     print(output)
     if (pid.gap(pid, 100)):
         flag = 0
+        break
     robot_ir(speed, speed, 2*math.atan(output)/math.pi*speed, 1/sampling_rate, flag)
     time.sleep(0.001)
 destroy()

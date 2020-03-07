@@ -46,6 +46,8 @@ class PID:
         
         if (output is 0):
             self.gap_count += 1
+        else:
+            self.gap_count = 0
 
         return (
             (self.Kp * self.Cp)    # proportional term
