@@ -16,7 +16,7 @@ while (target_address == None):
 print("Found target bluetooth device with address ", target_address)
 
 sock = bluetooth.BluetoothSocket(bluetooth.RFCOMM)
-sock.bind((target_address, port))
+sock.connect((target_address, port))
 
 sock.send("hello!")
 

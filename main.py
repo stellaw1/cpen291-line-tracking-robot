@@ -129,6 +129,10 @@ def getErrorLeft():
 
 flag = 1
 while True:
+    flag = main_robot(flag)
+destroy()
+
+def main_robot(flag):
     sampling_rate = 500
     speed = 1
     PID.init(PID, Kp=0.001, Ki=0.001, Kd=0.001)
@@ -137,7 +141,6 @@ while True:
     print(output)
     if (pid.gap(pid, 100)):
         flag = 0
-        break
+        return flag
     robot_ir(speed, speed, 2*math.atan(output)/math.pi*speed, 1/sampling_rate, flag)
     time.sleep(0.001)
-destroy()

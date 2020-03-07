@@ -1,34 +1,19 @@
-import math
-
-#import RPi.GPIO as GPIO
-import time
-import ctypes as ct
-
+from tkinter import *
 import matplotlib
-
-matplotlib.use('TKAgg')
 import matplotlib.pyplot as plt
+matplotlib.use('TkAgg')
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from matplotlib.figure import Figure
-import tkinter
-from tkinter import *
-from tkinter import messagebox
+import math
+import time
+import main
 
-
-#def plotSetup():
-    #GPIO.setmode(GPIO.BCM)  # Set the GPIO pins as BCM
-    # GPIO.setup(IRTrackingPinLL, GPIO.IN, pull_up_down=GPIO.PUD_UP)
-    # GPIO.setup(IRTrackingPinL, GPIO.IN, pull_up_down=GPIO.PUD_UP)
-    # GPIO.setup(IRTrackingPinR, GPIO.IN, pull_up_down=GPIO.PUD_UP)
-    # GPIO.setup(IRTrackingPinRR, GPIO.IN, pull_up_down=GPIO.PUD_UP)
-
-
-class GUIGraph:
+class Plotter:
     def __init__(self, frame):
-        self.fig = Figure(figsize=(4, 4))
+        self.fig = Figure(figsize=(6,4))
         self.figCanvas = FigureCanvasTkAgg(self.fig, master=frame)
-        self.p = self.fig.add_subplot(1, 1, 1)
-
+        self.p = self.fig.add_subplot(1,1,1)
+    
     # method for setting the labels of the current plot
     def set_labels(self, title=None, xlabel=None, ylabel=None):
         self.p.set_title(title)
@@ -37,25 +22,27 @@ class GUIGraph:
 
     # method for showing the plot at a specific location on the grid
     def show_plot(self, xloc=0, yloc=0, padx=0, pady=0):
-        self.figCanvas.get_tk_widget().grid(row=xloc, column=yloc, padx=padx, pady=pady)
+        self.figCanvas.get_tk_widget().grid(row=xloc,column=yloc,padx=padx,pady=pady)
 
     # method for making the plot disappear off of the current window
     def hide_plot(self):
         self.figCanvas.get_tk_widget().grid_remove()
 
     # method for clearing the plot and displaying the specified data
-    def graph(self, xdata, ydata, title, xtitle, ytitle):
+    def graph(self, xdata, ydata, color, title, xtitle, ytitle):
         self.p.clear()
         self.set_labels(title, xtitle, ytitle)
-        self.p.plot(xdata, ydata)
+        self.p.plot(xdata, ydata, color)
         self.figCanvas.draw()
         plt.xticks(rotation=45, ha='right')
 
-
-class TrackPlot:
+class RobotGUI:
     def __init__(self):
         self.root = Tk()
-        self.measure_rate = "1"
+        
+        self.turnVal = 0
+        self.speed = 0.1
+
         self.x = 0
         self.y = 0
         self.yDir = 1
@@ -65,28 +52,36 @@ class TrackPlot:
         self.phi1 = 0
         self.theta2 = 0
         self.phi2 = math.pi - self.theta2
+
         self.xVals = []
         self.yVals = []
+
+        self.flag = 1
+
         self.running = False
+
         self.message = StringVar()
         self.message.set("Welcome to PathPlotter!")
+
+        button = Button(self.root, text="Quit", command=self.stop_program)
+        button.grid(row=0, column=0)
+
+        self.plot = Plotter(self.root)
+        self.plot.show_plot(1,0)
+        self.begin_measure()
+
         self.root.mainloop()
-        self.turnVal = DoubleVar()
-        self.turnVal.set(1)
-        self.speed = DoubleVar()
-        self.speed.set(0.1)
 
-        self.radar_plot = GUIGraph(self.root)
-
-    # method to begin measuring sensor values and displaying them on the plot and GUI
     def begin_measure(self):
         self.running = True
+
+        self.flag = main.main_robot(self.flag)
 
         # if we implement speed just comment out this line
         #speed = 1
         self.hyp = math.sqrt(math.pow(self.x, 2) + math.pow(self.y, 2) + self.speed
-                             - 2 * math.sqrt(math.pow(self.x, 2) + math.pow(self.y, 2))
-                             * math.cos(math.pi * (1 - self.turnVal / 2)))
+                            - 2 * math.sqrt(math.pow(self.x, 2) + math.pow(self.y, 2))
+                            * math.cos(math.pi * (1 - self.turnVal / 2)))
         if self.x != 0:
             self.theta1 = math.atan(self.y / self.x)
         else:
@@ -103,13 +98,9 @@ class TrackPlot:
         self.xVals.append(self.x)
         self.yVals.append(self.y)
 
-        self.path_plot.graph(self.xVals, self.yVals, "Path Travelled So Far", "x", "y")
+        self.plot.graph(self.xVals, self.yVals, 'b', "Path Travelled So Far", "x", "y")
 
-        self.loop = self.root.after(int(float(self.measure_rate) * 1000), lambda: self.begin_measure())
-
-        # creating plot for x vs y
-        self.path_plot = GUIGraph(self.root)
-        self.path_plot.show_plot(xloc=50, padx=10)
+        self.loop = self.root.after(1000, lambda: self.begin_measure())
 
     # method for terminating the program
     def stop_program(self):
@@ -126,10 +117,5 @@ class TrackPlot:
         if not self.running:
             self.begin_measure()
 
-tp = TrackPlot()
-tp.begin_measure()
-i = 0
-while i < 10:
-    i += 1
-    time.sleep(1)
-    tp.turnVal = tp.turnVal + 1
+rg = RobotGUI()
+    
