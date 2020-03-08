@@ -45,6 +45,7 @@ rightIRTrackingPinR = 16
 leftIRTrackingPinL = 20
 leftIRTrackingPinR = 21
 
+# pins = [leftIRTrackingPinL, leftIRTrackingPinR, rightIRTrackingPinL, rightIRTrackingPinR]
 leftPins = [leftIRTrackingPinL, leftIRTrackingPinR]
 rightPins = [rightIRTrackingPinL, rightIRTrackingPinR]
 
@@ -66,6 +67,11 @@ def getOptiValues(pins):
 
 def destroy():
     GPIO.cleanup() # Release resource
+
+
+
+
+
 
 #-----------------------------------------------------------------#
 # Sonar code
@@ -161,52 +167,67 @@ kit = MotorKit()
 
 def robot_stop():
     kit.motor1.throttle = 0.0
-    kit.motor4.throttle = 0.0
+    kit.motor2.throttle = 0.0
 
-def robot_move(motor1, motor4, delay):
-    kit.motor1.throttle = motor1
-    kit.motor4.throttle = motor4
+def robot_move(left, right, delay):
+    kit.motor2.throttle = left
+    kit.motor1.throttle = right
     time.sleep(delay)
-    robot_stop()
+    #robot_stop()
 
 
-def robot_ir(old_motor1, old_motor_2, adjuster, time, flag, blockade):
+def robot_ir(speed, adjuster, times, flag, blockade):
+    left = speed
+    right= speed
     if flag == 1 and blockade == 0:
         if adjuster == 0:
             robot_move(1, 1, time)
         elif adjuster > 0:
-            robot_move(-adjuster, old_motor_2, time)  # try = 0 case
-            time.sleep(0.001)
+            robot_move(-adjuster, right, time)  # try = 0 case
+            # time.sleep(0.001)
         elif adjuster < 0:
-            robot_move(old_motor1, -adjuster, time)  # try = 0 case
-            time.sleep(0.001)
+            robot_move(left, -adjuster, time)  # try = 0 case
+            # time.sleep(0.001)
     elif flag == 0 and blockade == 0:
         robot_stop()
     elif blockade == 1:
         robot_stop()
         time.sleep(1)
-        robot_move(-old_motor1, -old_motor_2, time)
+        robot_move(-left, -right, time)
         time.sleep(1)
+
 
 
 #-----------------------------------------------------------------#
 # Line tracking code
 
+from PID import PID as pid
 import math
 
 setupOptiSensor()
 setupSonar()
 
-# dictRightTurns = {0b00: "a bit left", 0b01: "straight", 0b10: "too left", 0b11: "a bit right"}
-dictLeftErrors = {0b00: 1, 0b01: 0, 0b10: 1.5, 0b11: -1}
-# dictLeftTurns = {0b00: "a bit right", 0b10: "straight", 0b01: "too right", 0b11: "a bit left"}
-dictRightErrors = {0b00: -1, 0b10: 0, 0b01: -1.5, 0b11: 1}
+error = 0
+dictRightTurns = {0b00: "a bit left", 0b01: "straight", 0b10: "too left", 0b11: "a bit right"}
+dictLeftErrors = {0b00: 0.7, 0b01: 0, 0b10: 1, 0b11: -.7}
+dictLeftTurns = {0b00: "a bit right", 0b10: "straight", 0b01: "too right", 0b11: "a bit left"}
+dictRightErrors = {0b00: -0.7, 0b10: 0, 0b01: -1, 0b11: .7}
+
+# dictErrors = {0b0110: 0, 0b1100: -0.7, 0b1110: -1, 0b1111: 0, 0b0111: 1, 0b0011: 0.7, 0b0000: 2}
+
+# def getError():
+#     data = getOptiValues(pins)
+#     print(data)
+#     error =
+global gap_count
+gap_count = 0
+
 def getErrorRight():
     dataR = getOptiValues(rightPins)
     #print(dictRightTurns[dataR])
     print(dataR)
     error = dictRightErrors[dataR]
-    return error
+    return error, dataR
 
 def getErrorLeft():
     dataL = getOptiValues(leftPins)
@@ -214,14 +235,36 @@ def getErrorLeft():
     #print(dictRightTurns[dataL])
     print(dataL)
     error = dictLeftErrors[dataL]
-    return error
+    return error, dataL
+
+def getErrorOverall():
+    errorL, dataL = getErrorLeft()
+    errorR, dataR = getErrorRight()
+    global gap_count
+    if (dataL is 0b00 and dataR is 0b00):
+        gap_count += 1
+    else:
+        gap_count = 0
+    return errorL + errorR
 
 #Still need to account for case when reach end of line 
 #Crossover still needs to be handled 
 
 flag = 1
 while True:
-    flag = main_robot(flag)
+    sampling_rate = 3000
+    speed = 0.45
+    pid.init(pid, Kp=0.1, Ki=0, Kd=0.001)
+    output = pid.Update(pid, getErrorOverall())
+    #time.sleep(1/sampling_rate)
+    if (gap_count >= 200):
+        time.sleep(0.2)
+        robot_stop()
+        break
+    print(output)
+    # print(2*math.atan(output)/math.pi*speed)
+    robot_ir(speed, 2*math.atan(output)/math.pi*speed, 1/sampling_rate, flag)
+    # time.sleep(0.0001)
 destroy()
 
 def main_robot(flag):
@@ -235,11 +278,9 @@ def main_robot(flag):
     distance = getSonar()
     blockade = distance <= 25
 
-    robot_ir(speed, speed, math.atan(output)/math.pi*speed, 1/sampling_rate, flag, blockade)
-    robot_stop()
     if (PID.gap(PID, 100)):
         flag = 0
-    robot_ir(speed, speed, 2*math.atan(output)/math.pi*speed, 1/sampling_rate, flag)
+    robot_ir(speed, speed, 2*math.atan(output)/math.pi*speed, 1/sampling_rate, flag, blockade)
     if blockade:
         imageFile = takePhoto()
         postTweet(distance, speed, "end", imageFile)
