@@ -68,8 +68,7 @@ def robot_ir(speed, adjuster, times, flag):
             robot_move(left, -adjuster, times) #try = 0 case
             #time.sleep(0.001)
         elif adjuster<0:
-            
-            robot_move(+adjuster, right, times) #try = 0 case
+            robot_move(adjuster, right, times) #try = 0 case
             #time.sleep(0.001)
     else:
         robot_stop()
@@ -128,9 +127,9 @@ def getErrorOverall():
 
 flag = 1
 while True:
-    sampling_rate = 3000
-    speed = 0.45
-    pid.init(pid, Kp=0.1, Ki=0, Kd=0.001)
+    sampling_rate = 2000
+    speed = 0.4
+    pid.init(pid, Kp=0.01, Ki=0, Kd=0.001)
     output = pid.Update(pid, getErrorOverall())
     #time.sleep(1/sampling_rate)
     if (gap_count >= 200):
