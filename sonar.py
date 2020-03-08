@@ -11,8 +11,8 @@ pwm = GPIO.PWM(12, 50)
 pwm.start(0)
 
 # setting the ports for ultrasonic sensor
-TRIG = 23
-ECHO = 24
+TRIG = 26
+ECHO = 19
 
 
 def getSonar():
@@ -42,21 +42,21 @@ def getSonar():
     return distance
 
 
-def setAngle(angle, speed):
-    GPIO.setmode(GPIO.BCM)
-    duty = angle / 18 + 2.5
-    GPIO.output(12, True)
-    pwm.ChangeDutyCycle(duty)
-    time.sleep(1 / speed)
-    GPIO.output(12, False)
-    pwm.ChangeDutyCycle(0)
+# def setAngle(angle, speed):
+#     GPIO.setmode(GPIO.BCM)
+#     duty = angle / 18 + 2.5
+#     GPIO.output(12, True)
+#     pwm.ChangeDutyCycle(duty)
+#     time.sleep(1 / speed)
+#     GPIO.output(12, False)
+#     pwm.ChangeDutyCycle(0)
 
 
 def sendData(speed):
     try:
         for x in range(18):
             angle = x * 10
-            setAngle(angle, speed)
+            # setAngle(angle, speed)
             distance = getSonar()
             print(distance)
             # if distance <= 10 and angle % 20 == 0:

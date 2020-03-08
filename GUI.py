@@ -4,8 +4,8 @@ import math
 import time
 import ctypes as ct
 
+import RPi.GPIO as GPIO
 import matplotlib
-
 matplotlib.use('TKAgg')
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
@@ -105,6 +105,7 @@ class TrackPlot:
 
         self.path_plot.graph(self.xVals, self.yVals, "Path Travelled So Far", "x", "y")
 
+        # this line will cause a loop of this function, but can be removed for modularity
         self.loop = self.root.after(int(float(self.measure_rate) * 1000), lambda: self.begin_measure())
 
         # creating plot for x vs y
