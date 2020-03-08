@@ -253,19 +253,25 @@ def getErrorOverall():
 lastMove90Right = 0
 lastMove90left = 0
 flag = 1
-while True:
-    sampling_rate = 2000
-    speed = 0.4
-    pid.init(pid, Kp=0.01, Ki=0, Kd=0.001)
-    output = pid.Update(pid, getErrorOverall())
-    #time.sleep(1/sampling_rate)
-    if (gap_count >= 100/factor):
-        robot_stop()
-        break
-    print(output)
-    # print(2*math.atan(output)/math.pi*speed)
-    robot_ir(speed, 2*math.atan(output)/math.pi*speed, 1/sampling_rate, flag, 0)
-    # time.sleep(0.0001)
+try:
+    while True:
+        sampling_rate = 2000
+        speed = 0.4
+        pid.init(pid, Kp=0.1, Ki=0, Kd=7)
+        output = pid.Update(pid, getErrorOverall())
+        #time.sleep(1/sampling_rate)
+        if (gap_count >= 100/factor):
+            robot_stop()
+            break
+        print(output)
+        # print(2*math.atan(output)/math.pi*speed)
+        robot_ir(speed, 2*math.atan(output)/math.pi*speed, 1/sampling_rate, flag, 0)
+        # time.sleep(0.0001)
+except KeyboardInterrupt:
+    robot_stop()
+# except:
+#     print("IO error")
+#     robot_stop()
 destroy()
 
 def main_robot(flag):
