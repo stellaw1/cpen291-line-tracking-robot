@@ -175,18 +175,19 @@ def robot_move(left, right, delay):
     time.sleep(delay)
     #robot_stop()
 
+factor = 1.1
 
 def robot_ir(speed, adjuster, times, flag, blockade):
     left = speed
     right= speed
     if flag == 1 and blockade == 0:
         if adjuster == 0:
-            robot_move(left, right, times)
+            robot_move(left*factor, right*factor, times)
         elif adjuster > 0:
-            robot_move(left, -adjuster, times)  # try = 0 case
+            robot_move(left, right-adjuster, times)  # try = 0 case
             # time.sleep(0.001)
         elif adjuster < 0:
-            robot_move(adjuster,right, times)  # try = 0 case
+            robot_move(left+adjuster,right, times)  # try = 0 case
             # time.sleep(0.001)
     elif flag == 0 and blockade == 0:
         robot_stop()
@@ -258,7 +259,7 @@ while True:
     pid.init(pid, Kp=0.01, Ki=0, Kd=0.001)
     output = pid.Update(pid, getErrorOverall())
     #time.sleep(1/sampling_rate)
-    if (gap_count >= 150):
+    if (gap_count >= 100/factor):
         robot_stop()
         break
     print(output)
