@@ -41,7 +41,7 @@ class RobotGUI:
         self.root = Tk()
         
         self.turnVal = 0
-        self.speed = 0.1
+        self.speed = 1
 
         self.x = 0
         self.y = 0
@@ -75,7 +75,9 @@ class RobotGUI:
     def begin_measure(self):
         self.running = True
 
-        self.flag = main.main_robot(self.flag)
+        result = main.main_robot(self.flag)
+        self.flag = result[0]
+        self.turnVal = result[1]
 
         # if we implement speed just comment out this line
         #speed = 1
@@ -100,7 +102,7 @@ class RobotGUI:
 
         self.plot.graph(self.xVals, self.yVals, 'b', "Path Travelled So Far", "x", "y")
 
-        self.loop = self.root.after(1000, lambda: self.begin_measure())
+        self.loop = self.root.after(2, lambda: self.begin_measure())
 
     # method for terminating the program
     def stop_program(self):
