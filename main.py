@@ -7,12 +7,7 @@ import time
 import digitalio
 import board
 from PIL import Image, ImageDraw
-import adafruit_rgb_display.ili9341 as ili9341
-import adafruit_rgb_display.st7789 as st7789        # pylint: disable=unused-import
-import adafruit_rgb_display.hx8357 as hx8357        # pylint: disable=unused-import
-import adafruit_rgb_display.st7735 as st7735        # pylint: disable=unused-import
-import adafruit_rgb_display.ssd1351 as ssd1351      # pylint: disable=unused-import
-import adafruit_rgb_display.ssd1331 as ssd1331      # pylint: disable=unused-import
+import adafruit_rgb_display.st7735 as st7735        
  
 # Configuration for CS and DC pins (these are PiTFT defaults):
 cs_pin = digitalio.DigitalInOut(board.CE0)
@@ -24,20 +19,8 @@ BAUDRATE = 24000000
  
 # Setup SPI bus using hardware SPI:
 spi = board.SPI()
- 
-# pylint: disable=line-too-long
-# Create the display:
-#disp = st7789.ST7789(spi, rotation=90,                            # 2.0" ST7789
-#disp = st7789.ST7789(spi, height=240, y_offset=80, rotation=180,  # 1.3", 1.54" ST7789
-#disp = st7789.ST7789(spi, rotation=90, width=135, height=240, x_offset=53, y_offset=40, # 1.14" ST7789
-#disp = hx8357.HX8357(spi, rotation=180,                           # 3.5" HX8357
-#disp = st7735.ST7735R(spi, rotation=90,                           # 1.8" ST7735R
-disp = st7735.ST7735R(spi, rotation=270, height=128, x_offset=2, y_offset=3,   # 1.44" ST7735R
-#disp = st7735.ST7735R(spi, rotation=90, bgr=True,                 # 0.96" MiniTFT ST7735R
-#disp = ssd1351.SSD1351(spi, rotation=180,                         # 1.5" SSD1351
-#disp = ssd1351.SSD1351(spi, height=96, y_offset=32, rotation=180, # 1.27" SSD1351
-#disp = ssd1331.SSD1331(spi, rotation=180,                         # 0.96" SSD1331
-#disp = ili9341.ILI9341(spi, rotation=90,                           # 2.2", 2.4", 2.8", 3.2" ILI9341
+
+disp = st7735.ST7735R(spi, rotation=270, height=128, x_offset=2, y_offset=3,
                        cs=cs_pin, dc=dc_pin, rst=reset_pin, baudrate=BAUDRATE)
 # pylint: enable=line-too-long
  
@@ -58,31 +41,32 @@ draw = ImageDraw.Draw(image)
 draw.rectangle((0, 0, width, height), outline=0, fill=(0, 0, 0))
 disp.image(image)
  
-image = Image.open("image1.jpg")
- 
-# Scale the image to the smaller screen dimension
-image_ratio = image.width / image.height
-screen_ratio = width / height
-if screen_ratio < image_ratio:
-    scaled_width = image.width * height // image.height
-    scaled_height = height
-else:
-    scaled_width = width
-    scaled_height = image.height * width // image.width
-image = image.resize((scaled_width, scaled_height), Image.BICUBIC)
- 
-# Crop and center the image
-x = scaled_width // 2 - width // 2
-y = scaled_height // 2 - height // 2
-image = image.crop((x, y, x + width, y + height))
- 
-# Display image.
 def displayImage():
+    image = Image.open("image1.jpg")
+    
+    # Scale the image to the smaller screen dimension
+    image_ratio = image.width / image.height
+    screen_ratio = width / height
+    if screen_ratio < image_ratio:
+        scaled_width = image.width * height // image.height
+        scaled_height = height
+    else:
+        scaled_width = width
+        scaled_height = image.height * width // image.width
+    image = image.resize((scaled_width, scaled_height), Image.BICUBIC)
+    
+    # Crop and center the image
+    x = scaled_width // 2 - width // 2
+    y = scaled_height // 2 - height // 2
+    image = image.crop((x, y, x + width, y + height))
+    
+    # Display image.
     disp.image(image)
 
 #-----------------------------------------------------------------#
 # PID controller code
 
+# declare PID class that stores previous time and previous error
 class PID:
 
     def init(self, Kp, Ki, Kd):
@@ -94,7 +78,6 @@ class PID:
 
         self.previous_time = time.time()
         self.previous_error = 0
-        self.gap_count = 0
 
     def update(self, error):
         de = error - self.previous_error
@@ -106,16 +89,12 @@ class PID:
 
         output = self.Kp * error + self.Kd * de/dt + self.Ki * self.Ci
 
-        if (output is 0):
-            self.gap_count += 1
-        else:
-            self.gap_count = 0
-
         return output
 
 #-----------------------------------------------------------------#
 # Sensors code
 
+# declare the sensor pins
 GPIO.setwarnings(False)
 
 rightIRTrackingPinL = 12
@@ -124,10 +103,10 @@ rightIRTrackingPinR = 16
 leftIRTrackingPinL = 20
 leftIRTrackingPinR = 21
 
-# pins = [leftIRTrackingPinL, leftIRTrackingPinR, rightIRTrackingPinL, rightIRTrackingPinR]
 leftPins = [leftIRTrackingPinL, leftIRTrackingPinR]
 rightPins = [rightIRTrackingPinL, rightIRTrackingPinR]
 
+# define function to set up the optical sensors
 def setupOptiSensor():
     GPIO.setmode(GPIO.BCM) # Set the GPIO pins as BCM
     GPIO.setup(leftIRTrackingPinL, GPIO.IN, pull_up_down=GPIO.PUD_UP)
@@ -135,22 +114,16 @@ def setupOptiSensor():
     GPIO.setup(rightIRTrackingPinL, GPIO.IN, pull_up_down=GPIO.PUD_UP)
     GPIO.setup(rightIRTrackingPinR, GPIO.IN, pull_up_down=GPIO.PUD_UP)
 
-
+# define function to get optical values
 def getOptiValues(pins):
     value = 0
     for pin in pins:
         value = value << 1
         value = value | GPIO.input(pin)
-    #print(value)
     return value
 
 def destroy():
     GPIO.cleanup() # Release resource
-
-
-
-
-
 
 #-----------------------------------------------------------------#
 # Sonar code
@@ -227,8 +200,10 @@ def postTweet(distance, speed, state, imageFile):
 #-----------------------------------------------------------------#
 # Camera code
 from picamera import PiCamera
+
+camera = PiCamera()
+
 def takePhoto():
-    camera = PiCamera()
     camera.capture('./image%s.jpg' % 1)
     return '/home/pi/Desktop/image%s.jpg' % 1
 
@@ -281,9 +256,7 @@ def robot_ir(speed, adjuster, times, flag, blockade):
 #-----------------------------------------------------------------#
 # Line tracking code
 
-from PID import PID as pid
 import math
-#import GUI
 
 setupOptiSensor()
 setupSonar()
@@ -334,7 +307,6 @@ lastMove90Right = 0
 lastMove90left = 0
 flag = 1
 takePhoto()
-time.sleep(2)
 displayImage()
 
 # GUI.TrackPlot.init(TrackPlot)
@@ -344,20 +316,17 @@ displayImage()
 while True:
     try:
         sampling_rate = 50000
-        speed = 0.8
-        pid.init(pid, Kp=1.5, Ki=0, Kd=0.01)
-        output = pid.Update(pid, getErrorOverall())
-        #time.sleep(1/sampling_rate)
-        if (gap_count >= 100/factor):
+        speed = 0.35
+        PID.init(PID, Kp=1, Ki=0, Kd=0.01)
+        output = PID.update(PID, getErrorOverall())
+        if (gap_count >= 80/factor):
             robot_stop()
+            print("stopping robot, gap detected")
             break
-        #print(output)
-        # print(2*math.atan(output)/math.pi*speed)
         robot_ir(speed, 2*math.atan(output)/math.pi*speed, 1/sampling_rate, flag, 0)
-        # time.sleep(0.0001)
     except KeyboardInterrupt:
         robot_stop()
         break
     except:
-        print("IO error")
+        print("Passing By")
 destroy()
