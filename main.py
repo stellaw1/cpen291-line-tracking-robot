@@ -150,8 +150,8 @@ def postTweet(distance, speed, state, imageFile):
 from picamera import PiCamera
 def takePhoto():
     camera = PiCamera()
-    camera.capture('/home/pi/Desktop/image%s.jpg' % 1)
-    return '/home/pi/Desktop/image%s.jpg' % 1
+    camera.capture('/images/image%s.jpg' % 1)
+    return '/images/image%s.jpg' % 1
 
 #-----------------------------------------------------------------#
 # #-----------------------------------------------------------------#
