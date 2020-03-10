@@ -19,7 +19,7 @@ import java.util.UUID;
 public class MainActivity extends AppCompatActivity {
     private static final int REQUEST_ENABLE_BT = 1;
     private final BluetoothAdapter bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
-    private static final String PI_ADDRESS = "DC:A6:32:30:25:AC";
+    private static final String PI_ADDRESS = "DC:A6:32:30:25:A9";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -60,7 +60,7 @@ public class MainActivity extends AppCompatActivity {
         Set<BluetoothDevice> paired_devices = bluetoothAdapter.getBondedDevices();
         if (paired_devices.size() > 0) {
             for (BluetoothDevice bd : paired_devices) {
-                if (bd.getAddress().equals(PI_ADDRESS)) {
+                if (bd.getAddress().equals(PI_ADDRESS) || bd.getName().equals("raspberrypi")) {
                     Toast.makeText(this, "Found device with address: "
                             + bd.getAddress(), Toast.LENGTH_SHORT).show();
                     found = true;
@@ -72,7 +72,8 @@ public class MainActivity extends AppCompatActivity {
         if (!found) {
             Toast.makeText(this, "Device not found", Toast.LENGTH_SHORT).show();
         } else {
-
+            ClientThread cThread = new ClientThread(pi);
+            cThread.run();
         }
     }
 
@@ -129,6 +130,12 @@ public class MainActivity extends AppCompatActivity {
             } catch (IOException e) {
                 Log.e(TAG, "Could not close the client socket", e);
             }
+        }
+
+        private void manageMyConnectedSocket(BluetoothSocket socket) {
+            Toast.makeText(MainActivity.this,
+                    "Successfully connected to device with address: " + mmDevice.getAddress(),
+                    Toast.LENGTH_LONG).show();
         }
     }
 }
