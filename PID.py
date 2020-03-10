@@ -19,7 +19,6 @@ class PID:
 
         self.previous_time = origin_time
         self.previous_error = 0.0
-        self.gap_count = 0
         
 
 
@@ -44,10 +43,10 @@ class PID:
         
         output = (self.Kp * self.Cp) + (self.Ki * self.Ci) + (self.Kd * self.Cd) # derivative term
         
-        if (output is 0):
-            self.gap_count += 1
-        else:
-            self.gap_count = 0
+        #if (output is 0):
+            #self.gap_count += 1
+        #else:
+            #self.gap_count = 0
 
         return (
             (self.Kp * self.Cp)    # proportional term
@@ -55,7 +54,7 @@ class PID:
             + (self.Kd * self.Cd)  # derivative term
         )
 
-    def gap(self, length):
-        return self.gap_count > length
+    #def gap(self, length):
+        #return self.gap_count > length
         
         

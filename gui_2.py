@@ -7,13 +7,14 @@ from matplotlib.figure import Figure
 import math
 import time
 import main
+from PID import PID as pid
 
 class Plotter:
     def __init__(self, frame):
         self.fig = Figure(figsize=(6,4))
         self.figCanvas = FigureCanvasTkAgg(self.fig, master=frame)
         self.p = self.fig.add_subplot(1,1,1)
-    
+
     # method for setting the labels of the current plot
     def set_labels(self, title=None, xlabel=None, ylabel=None):
         self.p.set_title(title)
@@ -39,7 +40,7 @@ class Plotter:
 class RobotGUI:
     def __init__(self):
         self.root = Tk()
-        
+
         self.turnVal = 0
         self.speed = 0.1
 
@@ -100,7 +101,7 @@ class RobotGUI:
 
         self.plot.graph(self.xVals, self.yVals, 'b', "Path Travelled So Far", "x", "y")
 
-        self.loop = self.root.after(1000, lambda: self.begin_measure())
+        self.loop = self.root.after(1, lambda: self.begin_measure())
 
     # method for terminating the program
     def stop_program(self):
@@ -118,4 +119,3 @@ class RobotGUI:
             self.begin_measure()
 
 rg = RobotGUI()
-    
