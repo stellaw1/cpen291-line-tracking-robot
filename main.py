@@ -258,8 +258,8 @@ flag = 1
 # GUI.TrackPlot.init(TrackPlot)
 while True:
     try:
-        sampling_rate = 2000
-        speed = 0.5
+        sampling_rate = 2500
+        speed = 0.6
         pid.init(pid, Kp=1, Ki=0, Kd=0.01)
         output = pid.Update(pid, getErrorOverall())
         #time.sleep(1/sampling_rate)
