@@ -254,6 +254,7 @@ def getErrorOverall():
 lastMove90Right = 0
 lastMove90left = 0
 flag = 1
+takePhoto()
 
 # GUI.TrackPlot.init(TrackPlot)
 # good values: sampling_rate = 50000
