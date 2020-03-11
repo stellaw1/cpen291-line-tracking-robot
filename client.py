@@ -2,7 +2,21 @@ import glob
 import time
 from bluetooth import *
 import math
-import P1_FInal as motor
+
+from adafruit_motorkit import MotorKit
+from adafruit_motor import stepper
+
+kit = MotorKit()
+
+def robot_stop():
+    kit.motor1.throttle = 0.0
+    kit.motor2.throttle = 0.0
+
+def robot_move(left, right):
+    kit.motor2.throttle = left
+    kit.motor1.throttle = right
+    #time.sleep(delay)
+    #robot_stop()
 
 MAX_FORWARD = 1
 MAX_BACKWARDS = -1
@@ -26,50 +40,32 @@ while True:
     client_sock, client_info = server_sock.accept()
     print ("Accepted connection from ", client_info)
 
-    try:
-        data = client_sock.recv(1024)
-        if len(data) == 0:
+    while True:
+        try:
+            data = client_sock.recv(1024)
+
+            if len(data) == 0:
+                print("no data")
+                break
+
+            direction = data.decode(encoding='UTF-8')
+
+            if direction == 'Forward':
+                robot_move(1, 1)
+            elif direction == 'Backward':
+                robot_move(-1, -1)
+            elif direction == 'Left':
+                robot_move(0.5,1)
+            elif direction == 'Right':
+                robot_move(1,0.5)
+            elif direction == 'Stop':
+                robot_stop()
+
+        except IOError:
             break
-
-        motor_vals = get_data(data)
-        speeds = get_speeds(motor_vals)
-
-        left_speed = speeds[0]
-        right_speed = speeds[1]
-
-        print(left_speed, right_speed)
-
-        motor.robot_move(left_speed, right_speed, 0.1)
-
-    except IOError:
-        pass
-
-    except KeyboardInterrupt:
-        print("disconnected")
-        client_sock.close()
-        server_sock.close()
-        print("all done")
-        break
-
-    def get_data(data):
-        tup = tuple(filter(None, data.split(',')))
-        return tup
-
-    def get_speeds(data):
-        left_speed = 0
-        right_speed = 0
-        angle = data[0]
-        if angle <= 90:
-            left_speed = MAX_FORWARD
-            right_speed = (angle % 91) / 90 * MAX_FORWARD
-        elif angle <= 180:
-            right_speed = MAX_FORWARD
-            left_speed = ((angle - 90) % 91) / 90 * MAX_FORWARD
-        elif angle <= 270:
-            right_speed = MAX_BACKWARDS
-            left_speed = ((angle - 180) % 91) / 90 * MAX_BACKWARDS
-        else:
-            left_speed = MAX_BACKWARDS
-            right_speed = ((angle - 270) % 91) / 90 * MAX_BACKWARDS
-
-        return (left_speed, right_speed)
+        except KeyboardInterrupt:
+            print("disconnected")
+            client_sock.close()
+            server_sock.close()
+            print("all done")
+            break
