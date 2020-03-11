@@ -1,10 +1,14 @@
 package com.example.robotcontroller;
 
+import android.app.Activity;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothSocket;
 import android.content.Intent;
+import android.os.Handler;
+import android.os.Message;
 import android.util.Log;
+import android.view.MotionEvent;
 import android.view.View;
 import android.widget.Button;
 import android.widget.Toast;
@@ -13,13 +17,18 @@ import androidx.appcompat.app.AppCompatActivity;
 import android.os.Bundle;
 
 import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.util.Set;
 import java.util.UUID;
+
+import java.io.InputStream;
+import java.io.OutputStream;
 
 public class MainActivity extends AppCompatActivity {
     private static final int REQUEST_ENABLE_BT = 1;
     private final BluetoothAdapter bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
     private static final String PI_ADDRESS = "DC:A6:32:30:25:A9";
+    private ClientThread clientThread;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -38,6 +47,70 @@ public class MainActivity extends AppCompatActivity {
                         connectBluetooth();
                     }
                 }
+            }
+        });
+
+        Button disconnect_bt = findViewById(R.id.disconnect);
+        disconnect_bt.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                clientThread.connectedThread.write("Disconnect".getBytes());
+            }
+        });
+
+        Button forward = findViewById(R.id.forward);
+        forward.setOnTouchListener(new View.OnTouchListener() {
+            @Override
+            public boolean onTouch(View v, MotionEvent event) {
+                if (event.getAction() == MotionEvent.ACTION_DOWN) {
+                    clientThread.connectedThread.write("Forward".getBytes());
+                }
+                if (event.getAction() == MotionEvent.ACTION_UP) {
+                    clientThread.connectedThread.write("Stop".getBytes());
+                }
+                return true;
+            }
+        });
+
+        Button backward = findViewById(R.id.backward);
+        backward.setOnTouchListener(new View.OnTouchListener() {
+            @Override
+            public boolean onTouch(View v, MotionEvent event) {
+                if (event.getAction() == MotionEvent.ACTION_DOWN) {
+                    clientThread.connectedThread.write("Backward".getBytes());
+                }
+                if (event.getAction() == MotionEvent.ACTION_UP) {
+                    clientThread.connectedThread.write("Stop".getBytes());
+                }
+                return true;
+            }
+        });
+
+        Button left = findViewById(R.id.left);
+        left.setOnTouchListener(new View.OnTouchListener() {
+            @Override
+            public boolean onTouch(View v, MotionEvent event) {
+                if (event.getAction() == MotionEvent.ACTION_DOWN) {
+                    clientThread.connectedThread.write("Left".getBytes());
+                }
+                if (event.getAction() == MotionEvent.ACTION_UP) {
+                    clientThread.connectedThread.write("Stop".getBytes());
+                }
+                return true;
+            }
+        });
+
+        Button right = findViewById(R.id.right);
+        right.setOnTouchListener(new View.OnTouchListener() {
+            @Override
+            public boolean onTouch(View v, MotionEvent event) {
+                if (event.getAction() == MotionEvent.ACTION_DOWN) {
+                    clientThread.connectedThread.write("Right".getBytes());
+                }
+                if (event.getAction() == MotionEvent.ACTION_UP) {
+                    clientThread.connectedThread.write("Stop".getBytes());
+                }
+                return true;
             }
         });
     }
@@ -72,8 +145,8 @@ public class MainActivity extends AppCompatActivity {
         if (!found) {
             Toast.makeText(this, "Device not found", Toast.LENGTH_SHORT).show();
         } else {
-            ClientThread cThread = new ClientThread(pi);
-            cThread.run();
+            clientThread = new ClientThread(pi);
+            clientThread.run();
         }
     }
 
@@ -81,6 +154,8 @@ public class MainActivity extends AppCompatActivity {
         private final String TAG = ClientThread.class.getName();
         private final BluetoothSocket mmSocket;
         private final BluetoothDevice mmDevice;
+        private boolean connected;
+        public ConnectedThread connectedThread;
 
         private final UUID MY_UUID = UUID.fromString("94f39d29-7d6d-437d-973b-fba39e49d4ee");
 
@@ -89,6 +164,7 @@ public class MainActivity extends AppCompatActivity {
             // because mmSocket is final.
             BluetoothSocket tmp = null;
             mmDevice = device;
+            connected = false;
 
             try {
                 // Get a BluetoothSocket to connect with the given BluetoothDevice.
@@ -133,9 +209,110 @@ public class MainActivity extends AppCompatActivity {
         }
 
         private void manageMyConnectedSocket(BluetoothSocket socket) {
+            connected = true;
             Toast.makeText(MainActivity.this,
                     "Successfully connected to device with address: " + mmDevice.getAddress(),
                     Toast.LENGTH_LONG).show();
+            connectedThread = new ConnectedThread(socket);
+            //connectedThread.run();
+        }
+    }
+
+    private static final String TAG = "MY_APP_DEBUG_TAG";
+    private Handler handler; // handler that gets info from Bluetooth service
+
+    // Defines several constants used when transmitting messages between the
+    // service and the UI.
+    private interface MessageConstants {
+        public static final int MESSAGE_READ = 0;
+        public static final int MESSAGE_WRITE = 1;
+        public static final int MESSAGE_TOAST = 2;
+
+        // ... (Add other message types here as needed.)
+    }
+
+    private class ConnectedThread extends Thread {
+        private final BluetoothSocket mmSocket;
+        private final InputStream mmInStream;
+        private final OutputStream mmOutStream;
+        private byte[] mmBuffer; // mmBuffer store for the stream
+
+        public ConnectedThread(BluetoothSocket socket) {
+            mmSocket = socket;
+            InputStream tmpIn = null;
+            OutputStream tmpOut = null;
+
+            handler = new Handler();
+
+            // Get the input and output streams; using temp objects because
+            // member streams are final.
+            try {
+                tmpIn = socket.getInputStream();
+            } catch (IOException e) {
+                Log.e(TAG, "Error occurred when creating input stream", e);
+            }
+            try {
+                tmpOut = socket.getOutputStream();
+            } catch (IOException e) {
+                Log.e(TAG, "Error occurred when creating output stream", e);
+            }
+
+            mmInStream = tmpIn;
+            mmOutStream = tmpOut;
+        }
+
+        public void run() {
+            mmBuffer = new byte[1024];
+            int numBytes; // bytes returned from read()
+
+            // Keep listening to the InputStream until an exception occurs.
+            while (true) {
+                try {
+                    // Read from the InputStream.
+                    numBytes = mmInStream.read(mmBuffer);
+                    // Send the obtained bytes to the UI activity.
+                    Message readMsg = handler.obtainMessage(
+                            MessageConstants.MESSAGE_READ, numBytes, -1,
+                            mmBuffer);
+                    readMsg.sendToTarget();
+                } catch (IOException e) {
+                    Log.d(TAG, "Input stream was disconnected", e);
+                    break;
+                }
+            }
+        }
+
+        // Call this from the main activity to send data to the remote device.
+        public void write(byte[] bytes) {
+            try {
+                mmOutStream.write(bytes);
+
+                // Share the sent message with the UI activity.
+                Message writtenMsg = handler.obtainMessage(
+                        MessageConstants.MESSAGE_WRITE, -1, -1, mmBuffer);
+                writtenMsg.sendToTarget();
+            } catch (IOException e) {
+                Toast.makeText(MainActivity.this, "Error occurred when sending data", Toast.LENGTH_LONG);
+                Log.e(TAG, "Error occurred when sending data", e);
+
+                // Send a failure message back to the activity.
+                Message writeErrorMsg =
+                        handler.obtainMessage(MessageConstants.MESSAGE_TOAST);
+                Bundle bundle = new Bundle();
+                bundle.putString("toast",
+                        "Couldn't send data to the other device");
+                writeErrorMsg.setData(bundle);
+                handler.sendMessage(writeErrorMsg);
+            }
+        }
+
+        // Call this method from the main activity to shut down the connection.
+        public void cancel() {
+            try {
+                mmSocket.close();
+            } catch (IOException e) {
+                Log.e(TAG, "Could not close the connect socket", e);
+            }
         }
     }
 }
