@@ -135,12 +135,13 @@ class RobotGUI:
 # PID controller code
 
 
-class PID:
+class pid:
     """PID controller."""
 
-    def init(self, Kp, Ki, Kd, origin_time=None):
-        if origin_time is None:
-            origin_time = time.time()
+    def init(self, Kp, Ki, Kd):
+        
+        # set origin time as the current time
+        origin_time = time.time()
 
         # Gains for each term
         self.Kp = Kp
@@ -154,17 +155,17 @@ class PID:
 
         self.previous_time = origin_time
         self.previous_error = 0.0
-        self.gap_count = 0
         
-    def Update(self, error, current_time=None):
-        
-        if current_time is None:
-            current_time = time.time()
-            
+    def Update(self, error):          
+
+        # dt is change in time (time interval between calls to update)
+        # if dt is negative, return 0  
+        current_time = time.time()
         dt = current_time - self.previous_time
         if dt <= 0.0:
             return 0
         
+        # de is change in error (from previous)
         de = error - self.previous_error
 
         self.Cp = error
@@ -173,11 +174,6 @@ class PID:
 
         self.previous_time = current_time
         self.previous_error = error
-        
-        output = (self.Kp * self.Cp) + (self.Ki * self.Ci) + (self.Kd * self.Cd) # derivative term
-        
-        if (output is 0):
-            self.gap_count += 1
 
         return (
             (self.Kp * self.Cp)    # proportional term
@@ -330,7 +326,10 @@ def robot_stop():
     kit.motor1.throttle = 0.0
     kit.motor2.throttle = 0.0
 
+# 
+global count
 count = 0
+global entry
 entry = 0
 
 # robot_move function that change the motors to the input throttle
@@ -338,7 +337,10 @@ entry = 0
 def robot_move(left, right, delay):
     kit.motor2.throttle = left
     kit.motor1.throttle = right
-    entry += delay*(left-right)
+
+    global entry
+    global count
+    entry += (right-left)/2
     count += 1
 
     if count > 100: 
@@ -442,12 +444,14 @@ def getErrorOverall():
 # flag indicates whether we want the robot to move or not
 flag = 1
 
+# calls a robot_stop at the beginning of every program start
 robot_stop()
 
 # define a demo function that runs the robot autonomously to track line
 def demo():
-    try:
-        while True:
+    
+    while True:
+        try:
             sampling_rate = 2000
             speed = 0.4
             pid.init(pid, Kp=0.1, Ki=0, Kd=7)
@@ -462,14 +466,14 @@ def demo():
             # print(2*math.atan(output)/math.pi*speed)
             robot_ir(speed, 2*math.atan(output)/math.pi*speed, 1/sampling_rate, flag, 0)
             # time.sleep(0.0001)
-    except KeyboardInterrupt:
-        robot_stop()
-        postTweet(getSonar(), 3, "end", takePhoto())
-        rg = RobotGUI()
-        return
-    except IOError:
-        print("IO error")
-        # return
+        except KeyboardInterrupt:
+            robot_stop()
+            postTweet(getSonar(), 3, "end", takePhoto())
+            rg = RobotGUI()
+            return
+        except IOError:
+            print("IO error")
+            # return
     destroy()
 
 #-----------------------------------------------------------------#
