@@ -264,8 +264,11 @@ try:
         # time.sleep(0.0001)
 except KeyboardInterrupt:
     robot_stop()
+    setupSonar()
+    if getSonar() <= 10:    
+    postTweet(getSonar(), speed, "end", takePhoto()) 
 except:
-     print("IO error")
+     print("Passing")
 destroy()
 
 def main_robot(flag):
