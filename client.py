@@ -2,16 +2,15 @@ import glob
 import time
 from bluetooth import *
 import math
+import re
 
 from adafruit_motorkit import MotorKit
 from adafruit_motor import stepper
 
 kit = MotorKit()
 
-
-MAX_FORWARD = 0.5
-MAX_BACKWARDS = -0.5
-
+MAX_FORWARD = 1
+MAX_BACKWARDS = -1
 
 def robot_stop():
     kit.motor1.throttle = 0.0
@@ -20,8 +19,6 @@ def robot_stop():
 def robot_move(left, right):
     kit.motor2.throttle = left
     kit.motor1.throttle = right
-    #robot_stop()
-
 
 def get_data(data):
     tup = tuple(filter(None, data.split(',')))
@@ -41,7 +38,6 @@ def get_speeds(x, y):
         angle = math.degrees(math.atan2(radY, radX))
         if angle < 0:
             angle += 360
-        print("angle: ", angle)
 
         if angle <= 90:
             left_speed = MAX_FORWARD
@@ -58,8 +54,10 @@ def get_speeds(x, y):
     else:
         return (0, 0)
 
-    left = left_speed * radX/(radius)
-    right = right_speed * radY/(radius)
+    displacement = math.sqrt(radX * radX + radY * radY)
+
+    left = left_speed * displacement / radius
+    right = right_speed * displacement / radius
 
     if left > MAX_FORWARD:
         left = MAX_FORWARD
@@ -69,8 +67,8 @@ def get_speeds(x, y):
         left = MAX_BACKWARDS
     if right < MAX_BACKWARDS:
         right = MAX_BACKWARDS
-        
-    return (left_speed, right_speed)
+
+    return (left, right)
 
 server_sock=BluetoothSocket( RFCOMM )
 server_sock.bind(("",PORT_ANY))
@@ -103,14 +101,14 @@ while True:
 
             if direction == 'Demo':
                 import main
-            if (!direction.isdigit()):
+            elif (re.search('[a-zA-Z]', direction)):
                 robot_stop()
             else:
                 motor_vals = get_data(direction)
                 speeds = get_speeds(motor_vals[0], motor_vals[1])
                 left_speed = speeds[0]
                 right_speed = speeds[1]
-                robot_move(left_speed,right_speed)
+                robot_move(left_speed, right_speed)
 
         except IOError:
             print("IOError")

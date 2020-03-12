@@ -99,7 +99,7 @@ def getSonar():
     distance = pulse_duratGPIOn * sound_speed * 50
     distance = round(distance, 2)
     return distance
- 
+
 #-----------------------------------------------------------------#
 
 
@@ -142,13 +142,13 @@ def postTweet(distance, speed, state, imageFile):
 from picamera import PiCamera
 def takePhoto():
     camera = PiCamera()
-    pic = '/home/pi/Desktop/image1.jpg' 
+    pic = '/home/pi/Desktop/image1.jpg'
     camera.capture('/home/pi/Desktop/image%s.jpg' % 1)
     return pic
 
 setupSonar()
-if getSonar() <= 10:    
-    postTweet(getSonar(), 3, "end", takePhoto())   
+if getSonar() <= 10:
+    postTweet(getSonar(), 3, "end", takePhoto())
 #-----------------------------------------------------------------#
 # #-----------------------------------------------------------------#
 # Motors code
@@ -169,7 +169,10 @@ def robot_move(left, right, delay):
     kit.motor2.throttle = left
     kit.motor1.throttle = right
     time.sleep(delay)
-    #robot_stop()
+
+def robot_run(left, right):
+    kit.motor2.throttle = left
+    kit.motor1.throttle = right
 
 factor = 1.1
 
@@ -242,34 +245,35 @@ def getErrorOverall():
         gap_count = 0
     return errorL + errorR
 
-#Still need to account for case when reach end of line 
-#Crossover still needs to be handled 
+#Still need to account for case when reach end of line
+#Crossover still needs to be handled
 lastMove90Right = 0
 lastMove90left = 0
 flag = 1
 
-try:
-    while True:
-        sampling_rate = 2000
-        speed = 0.4
-        pid.init(pid, Kp=0.1, Ki=0, Kd=7)
-        output = pid.Update(pid, getErrorOverall())
-        #time.sleep(1/sampling_rate)
-        if (gap_count >= 100/factor):
-            robot_stop()
-            break
-        print(output)
-        # print(2*math.atan(output)/math.pi*speed)
-        robot_ir(speed, 2*math.atan(output)/math.pi*speed, 1/sampling_rate, flag, 0)
-        # time.sleep(0.0001)
-except KeyboardInterrupt:
-    robot_stop()
-    setupSonar()
-    if getSonar() <= 10:    
-    postTweet(getSonar(), speed, "end", takePhoto()) 
-except:
-     print("Passing")
-destroy()
+def demo():
+    try:
+        while True:
+            sampling_rate = 2000
+            speed = 0.4
+            pid.init(pid, Kp=0.1, Ki=0, Kd=7)
+            output = pid.Update(pid, getErrorOverall())
+            #time.sleep(1/sampling_rate)
+            if (gap_count >= 100/factor):
+                robot_stop()
+                break
+            print(output)
+            # print(2*math.atan(output)/math.pi*speed)
+            robot_ir(speed, 2*math.atan(output)/math.pi*speed, 1/sampling_rate, flag, 0)
+            # time.sleep(0.0001)
+    except KeyboardInterrupt:
+        robot_stop()
+        setupSonar()
+        if getSonar() <= 10:
+            postTweet(getSonar(), speed, "end", takePhoto())
+    except:
+         print("Passing")
+    destroy()
 
 def main_robot(flag):
     sampling_rate = 500
@@ -291,3 +295,112 @@ def main_robot(flag):
     time.sleep(0.001)
     return flag
 
+#-----------------------------------------------------------------#
+# Bluetooth handling code
+
+import glob
+from bluetooth import *
+import re
+
+MAX_FORWARD = 1
+MAX_BACKWARDS = -1
+
+def get_data(data):
+    tup = tuple(filter(None, data.split(',')))
+    return (int(tup[0]), int(tup[1]))
+
+def get_speeds(x, y):
+
+    cX = 290
+    cY = 590
+    radius = 220
+    radX = x - cX
+    radY = cY - y
+    left_speed = 0
+    right_speed = 0
+
+    if (x != 0 and y != 0):
+        angle = math.degrees(math.atan2(radY, radX))
+        if angle < 0:
+            angle += 360
+
+        if angle <= 90:
+            left_speed = MAX_FORWARD
+            right_speed = (angle % 91) / 90 * MAX_FORWARD
+        elif angle <= 180:
+            right_speed = MAX_FORWARD
+            left_speed = ((180 - angle) % 91) / 90 * MAX_FORWARD
+        elif angle <= 270:
+            right_speed = MAX_BACKWARDS
+            left_speed = ((angle - 180) % 91) / 90 * MAX_BACKWARDS
+        else:
+            left_speed = MAX_BACKWARDS
+            right_speed = ((360 - angle) % 91) / 90 * MAX_BACKWARDS
+    else:
+        return (0, 0)
+
+    displacement = math.sqrt(radX * radX + radY * radY)
+
+    left = left_speed * displacement / radius
+    right = right_speed * displacement / radius
+
+    if left > MAX_FORWARD:
+        left = MAX_FORWARD
+    if right > MAX_FORWARD:
+        right = MAX_FORWARD
+    if left < MAX_BACKWARDS:
+        left = MAX_BACKWARDS
+    if right < MAX_BACKWARDS:
+        right = MAX_BACKWARDS
+
+    return (left, right)
+
+server_sock=BluetoothSocket( RFCOMM )
+server_sock.bind(("",PORT_ANY))
+server_sock.listen(1)
+
+port = server_sock.getsockname()[1]
+
+uuid = "94f39d29-7d6d-437d-973b-fba39e49d4ee"
+
+advertise_service( server_sock, "LineTrackerServer",
+                   service_id = uuid,
+                   service_classes = [ uuid, SERIAL_PORT_CLASS ],
+                   profiles = [ SERIAL_PORT_PROFILE ],
+                   )
+while True:
+    print("Waiting for connection on RFCOMM channel ", port)
+
+    client_sock, client_info = server_sock.accept()
+    print ("Accepted connection from ", client_info)
+
+    while True:
+        try:
+            data = client_sock.recv(1024)
+
+            if len(data) == 0:
+                print("no data")
+                break
+
+            direction = data.decode(encoding='UTF-8')
+
+            if direction == 'Demo':
+                demo()
+            elif (re.search('[a-zA-Z]', direction)):
+                robot_stop()
+            else:
+                motor_vals = get_data(direction)
+                speeds = get_speeds(motor_vals[0], motor_vals[1])
+                left_speed = speeds[0]
+                right_speed = speeds[1]
+                robot_run(left_speed, right_speed)
+
+        except IOError:
+            print("IOError")
+            continue
+
+        except KeyboardInterrupt:
+            print("disconnected")
+            client_sock.close()
+            server_sock.close()
+            break
