@@ -1,6 +1,5 @@
 import time
 
-
 class PID:
     """PID controller."""
 
@@ -21,17 +20,19 @@ class PID:
         self.previous_time = origin_time
         self.previous_error = 0.0
         self.gap_count = 0
+        
+
 
 
     def Update(self, error, current_time=None):
-
+        
         if current_time is None:
             current_time = time.time()
-
+            
         dt = current_time - self.previous_time
         if dt <= 0.0:
             return 0
-
+        
         de = error - self.previous_error
 
         self.Cp = error
@@ -40,9 +41,19 @@ class PID:
 
         self.previous_time = current_time
         self.previous_error = error
+        
+        output = (self.Kp * self.Cp) + (self.Ki * self.Ci) + (self.Kd * self.Cd) # derivative term
+        
+        if (output is 0):
+            self.gap_count += 1
 
         return (
-                (self.Kp * self.Cp)  # proportional term
-                + (self.Ki * self.Ci)  # integral term
-                + (self.Kd * self.Cd)  # derivative term
+            (self.Kp * self.Cp)    # proportional term
+            + (self.Ki * self.Ci)  # integral term
+            + (self.Kd * self.Cd)  # derivative term
         )
+
+    def gap(self, length):
+        return self.gap_count > length
+        
+        
