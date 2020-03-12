@@ -6,13 +6,9 @@ import time
 GPIO.setmode(GPIO.BCM)
 GPIO.setwarnings(False)
 
-GPIO.setup(12, GPIO.OUT)
-pwm = GPIO.PWM(12, 50)
-pwm.start(0)
-
 # setting the ports for ultrasonic sensor
-TRIG = 26
-ECHO = 19
+TRIG = 23
+ECHO = 24
 
 
 def getSonar():
@@ -21,7 +17,7 @@ def getSonar():
     GPIO.setup(TRIG, GPIO.OUT)
     GPIO.setup(ECHO, GPIO.IN)
     GPIO.output(TRIG, False)
-    time.sleep(0.1)
+    time.sleep(1)
     # time between the pulse 10uS
     GPIO.output(TRIG, True)
     time.sleep(0.00001)
@@ -41,41 +37,3 @@ def getSonar():
     distance = round(distance, 2)
     return distance
 
-
-# def setAngle(angle, speed):
-#     GPIO.setmode(GPIO.BCM)
-#     duty = angle / 18 + 2.5
-#     GPIO.output(12, True)
-#     pwm.ChangeDutyCycle(duty)
-#     time.sleep(1 / speed)
-#     GPIO.output(12, False)
-#     pwm.ChangeDutyCycle(0)
-
-
-def sendData(speed):
-    try:
-        for x in range(18):
-            angle = x * 10
-            # setAngle(angle, speed)
-            distance = getSonar()
-            print(distance)
-            # if distance <= 10 and angle % 20 == 0:
-            #     twit.postTweet(distance, angle)
-            # elif distance >= 60 and distance <= 75 and angle % 20 == 10:
-            #     twit.postTweet(distance, angle)
-            # elif distance > 100:
-            #     twit.postTweet(distance, angle)
-            # if distance <= 15:
-            #     loop(2)
-            # elif distance <= 30:
-            #     loop(3)
-            # elif distance <= 45:
-            #     loop(4)
-            # else:
-            #     loop(5)
-    except KeyboardInterrupt:
-        GPIO.cleanup()
-        pwm.stop()
-
-while True:
-    print(getSonar())
