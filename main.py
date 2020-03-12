@@ -266,7 +266,7 @@ except KeyboardInterrupt:
     robot_stop()
     setupSonar()
     if getSonar() <= 10:    
-    postTweet(getSonar(), 3, "end", takePhoto()) 
+    postTweet(getSonar(), speed, "end", takePhoto()) 
 except:
      print("Passing")
 destroy()
