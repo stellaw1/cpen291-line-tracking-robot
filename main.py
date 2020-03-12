@@ -4,48 +4,58 @@ import time
 #-----------------------------------------------------------------#
 # PID controller code
 
+# define a PID class that handles error output for line tracking
 class PID:
+    # initialize the class with a set Kp, Ki, Kd which are the gains
+    # for each P, I, D term in the controller
     def init(self, Kp, Ki, Kd):
         self.Kp = Kp
         self.Ki = Ki
         self.Kd = Kd
 
+        # declare Ci variable to store preivous Integral term
         self.Ci = 0
 
+        # declare previous time and error variable to store previous 
+        # time and error
         self.previous_time = time.time()
         self.previous_error = 0
-        self.gap_count = 0
 
     def update(self, error):
+
+        # calculate de (change in error) and dt (change in time)
+        # divide de and dt to get the Derivative term
         de = error - self.previous_error
         dt = time.time() - self.previous_time
+
+        # calculate current Ci by multiplying the error by dt and 
+        # adding it to previous Ci
         self.Ci += error * dt
 
+        # if dt is smaller than 0 (previous_time is > current time)
+        # return 0
         if dt <= 0.0:
             return 0
 
-        output = self.Kp * error + self.Kd * de/dt + self.Ki * self.Ci
-
-        if (output is 0):
-            self.gap_count += 1
-        else:
-            self.gap_count = 0
-
-        return output
+        # return the output according to the PID formula
+        return self.Kp * error + self.Kd * de/dt + self.Ki * self.Ci
 
 #-----------------------------------------------------------------#
 # Sensors code
 
+# setup the sensors according to their ports
 GPIO.setwarnings(False)
 rightIRTrackingPinL = 12
 rightIRTrackingPinR = 16
 leftIRTrackingPinL = 20
 leftIRTrackingPinR = 21
 
-# pins = [leftIRTrackingPinL, leftIRTrackingPinR, rightIRTrackingPinL, rightIRTrackingPinR]
+# setup left and right pins array to store the left and right sensor ports
 leftPins = [leftIRTrackingPinL, leftIRTrackingPinR]
 rightPins = [rightIRTrackingPinL, rightIRTrackingPinR]
 
+# define optical sensor setup function that calls GPIO.setup to setup the 
+# sensors as input
 def setupOptiSensor():
     GPIO.setmode(GPIO.BCM) # Set the GPIO pins as BCM
     GPIO.setup(leftIRTrackingPinL, GPIO.IN, pull_up_down=GPIO.PUD_UP)
@@ -53,15 +63,16 @@ def setupOptiSensor():
     GPIO.setup(rightIRTrackingPinL, GPIO.IN, pull_up_down=GPIO.PUD_UP)
     GPIO.setup(rightIRTrackingPinR, GPIO.IN, pull_up_down=GPIO.PUD_UP)
 
-
+# define get optical value function that retuns the values read from the 
+# optical sensor in binary format
 def getOptiValues(pins):
     value = 0
     for pin in pins:
         value = value << 1
         value = value | GPIO.input(pin)
-    #print(value)
     return value
 
+# define a cleanup destroy function that calls GPIO.cleanup
 def destroy():
     GPIO.cleanup() # Release resource
 
@@ -101,17 +112,16 @@ def getSonar():
     return distance
 
 #-----------------------------------------------------------------#
-
-
-#-----------------------------------------------------------------#
 # Twitter code
 from twython import Twython
 
+# define the keys and tokens for twitter
 consumer_key = 'IbZYLMhINCxuxRLd4OyrM2Ph2'
 consumer_secret = 'pBfsBvgDYBTjcXuYNgJXl5DhwXNEosZStpjCu4az7SgTvgyMcx'
 access_token = '1220402110610604032-0Eca0tLBOjE2TKd1fPbh6BfZzMZ4u2'
 access_token_secret = 'GH4fuU3riSkWVh0UGODAasDCI2gN8Qqpc7AkGlQnwzHQZ'
 
+# initialize a twitter object by calling Twython initializer
 twitter = Twython(
     consumer_key,
     consumer_secret,
@@ -119,6 +129,7 @@ twitter = Twython(
     access_token_secret
 )
 
+# define a postTweet function that posts different tweets to @cpen291team11
 def postTweet(distance, speed, state, imageFile):
     if state == "end":
         message = "I have finished running the track!"
@@ -136,101 +147,123 @@ def postTweet(distance, speed, state, imageFile):
 
 
 #-----------------------------------------------------------------#
-
-#-----------------------------------------------------------------#
 # Camera code
 from picamera import PiCamera
+
+# initialize a PiCamera object by calling PiCamera
+camera = PiCamera()
+
+# define a takePhoto function that takes a picture and stores it to a
+# certain directory
 def takePhoto():
-    camera = PiCamera()
     pic = '/home/pi/Desktop/image1.jpg'
     camera.capture('/home/pi/Desktop/image%s.jpg' % 1)
     return pic
 
+# setup the Sonar sensors
 setupSonar()
+
+# if the sonar reading is less than 10 cm, take a picture and tweet it
 if getSonar() <= 10:
     postTweet(getSonar(), 3, "end", takePhoto())
 #-----------------------------------------------------------------#
-# #-----------------------------------------------------------------#
 # Motors code
-
-
-#-----------------------------------------------------------------#
 
 from adafruit_motorkit import MotorKit
 from adafruit_motor import stepper
 
+# define a MotorKit object to control the motors
 kit = MotorKit()
 
+# robot_stop function that stops the motors (throttle = 0)
 def robot_stop():
     kit.motor1.throttle = 0.0
     kit.motor2.throttle = 0.0
 
+# robot_move function that change the motors to the input throttle
+# for delay amoung of time (in seconds) 
 def robot_move(left, right, delay):
     kit.motor2.throttle = left
     kit.motor1.throttle = right
     time.sleep(delay)
 
+# robot_run function that simply sets the left and right motors to 
+# the input speeds indefinitely 
 def robot_run(left, right):
     kit.motor2.throttle = left
     kit.motor1.throttle = right
 
+# a factor variable that controls how much faster the robot moves when
+# going straight than turning
 factor = 1.1
 
+# define the robot_ir function that moves with the optical sensor 
+# and PID controller output
+# adjuster is a value from 1 to -1
 def robot_ir(speed, adjuster, times, flag, blockade):
+
+    # we set additional varible left and right that is equal to speed to 
+    # control the left and right motors
     left = speed
     right= speed
+    
+    # flag is the variable that controls 
     if flag == 1 and blockade == 0:
+
+        # according to the adjuster value, the robot either turns or goes forward
+        # if adjuster is 0, the robot goes forward 
         if adjuster == 0:
             robot_move(left*factor, right*factor, times)
+
+        # if adjuster is positive, the robot turns right by throttling the right
+        # motor with speed - adjuster
         elif adjuster > 0:
-            robot_move(left, right-adjuster, times)  # try = 0 case
-            # time.sleep(0.001)
+            robot_move(left, right-adjuster, times)
+
+        # if adjuster is positive, the robot turns left by throttling the left
+        # motor with speed - adjuster  
         elif adjuster < 0:
-            robot_move(left+adjuster,right, times)  # try = 0 case
-            # time.sleep(0.001)
+            robot_move(left+adjuster,right, times) 
+    
+    # else if flag is 0 and blockade is 0 stop the robot
     elif flag == 0 and blockade == 0:
         robot_stop()
+
+    # else if blockade is 1, move the robot back
     elif blockade == 1:
         robot_stop()
         time.sleep(1)
         robot_move(-left, -right, time)
         time.sleep(1)
+        robot_stop()
 
 #-----------------------------------------------------------------#
 # Line tracking code
 
-from PID import PID as pid
 import math
 
+# call the setup functions to setup the optical sensor
 setupOptiSensor()
-setupSonar()
 
-error = 0
-dictRightTurns = {0b00: "a bit left", 0b01: "straight", 0b10: "too left", 0b11: "a bit right"}
+# dictionaries for the error value according to the optical sensor readings
 dictLeftErrors = {0b00: 0.7, 0b01: 0, 0b11: -0.7,  0b10: -2}
-dictLeftTurns = {0b00: "a bit right", 0b10: "straight", 0b01: "too right", 0b11: "a bit left"}
 dictRightErrors = {0b00: -0.7, 0b10: 0, 0b11: 0.7, 0b01: 2}
 
-# dictErrors = {0b0110: 0, 0b1100: -0.7, 0b1110: -1, 0b1111: 0, 0b0111: 1, 0b0011: 0.7, 0b0000: 2}
-
-# def getError():
-#     data = getOptiValues(pins)
-#     print(data)
-#     error =
+# gap count variable that keeps track of how many consecutive all-white detections
+# the optical sensors have 
 global gap_count
 gap_count = 0
 
+# define getError functions that obtain error value is the dictionary
+# declared above and combines the left and right optical sensors
 def getErrorRight():
     dataR = getOptiValues(rightPins)
-    #print(dictRightTurns[dataR])
     print(dataR)
     error = dictRightErrors[dataR]
     return error, dataR
 
 def getErrorLeft():
     dataL = getOptiValues(leftPins)
-    #dataL = 0b10
-    #print(dictRightTurns[dataL])
     print(dataL)
     error = dictLeftErrors[dataL]
     return error, dataL
@@ -238,62 +271,63 @@ def getErrorLeft():
 def getErrorOverall():
     errorL, dataL = getErrorLeft()
     errorR, dataR = getErrorRight()
+    
+    # increments the gap_count variable if the readings of all optical sensors
+    # are 0
     global gap_count
     if (dataL is 0b00 and dataR is 0b00):
         gap_count += 1
+    
+    # otherwise clear the gap_count variable (set to 0)
     else:
         gap_count = 0
     return errorL + errorR
 
-#Still need to account for case when reach end of line
-#Crossover still needs to be handled
-lastMove90Right = 0
-lastMove90left = 0
+# flag indicates whether we want the robot to move or not
 flag = 1
 
+# define a demo function that runs the robot autonomously to track line
 def demo():
     try:
+        # loops indefinitely running the line tracking code
         while True:
+
+            # set the sampling rate of the optical sensors and the speed of the motors
             sampling_rate = 2000
             speed = 0.4
-            pid.init(pid, Kp=0.1, Ki=0, Kd=7)
-            output = pid.Update(pid, getErrorOverall())
-            #time.sleep(1/sampling_rate)
-            if (gap_count >= 100/factor):
+
+            # set the gap variable to define how large the gap_count is to stop the robot
+            gap = 80
+
+            # initialize the pid controller with Kp = 0.1, Ki = 0, Kd = 7
+            PID.init(PID, Kp=0.1, Ki=0, Kd=7)
+
+            # get output variable for by calling pid.update and the getErrorOverall functions
+            output = PID.update(PID, getErrorOverall())
+
+            # check if gap_count is bigger than gap/factor, 
+            # if so stop the robot and tweets then breaks out the loop
+            if (gap_count >= gap/factor):
                 robot_stop()
+                postTweet(getSonar(), speed, "end", takePhoto())
                 break
-            print(output)
-            # print(2*math.atan(output)/math.pi*speed)
+            
+            # uncomment this to print the output of the PID
+            # print(output)
+
+            # calls the robot_ir function with the output of the PID as the adjuster value
             robot_ir(speed, 2*math.atan(output)/math.pi*speed, 1/sampling_rate, flag, 0)
-            # time.sleep(0.0001)
+
+    # handles a KeyboardInterrupt by stopping the robot and post a tweet if the distance 
+    # sonar detects is smaller than 10
     except KeyboardInterrupt:
         robot_stop()
-        setupSonar()
         if getSonar() <= 10:
             postTweet(getSonar(), speed, "end", takePhoto())
     except:
          print("Passing")
     destroy()
 
-def main_robot(flag):
-    sampling_rate = 500
-    speed = 1
-    PID.init(PID, Kp=0.001, Ki=0.001, Kd=0.001)
-    output = PID.Update(PID, getErrorRight()+getErrorLeft())
-    time.sleep(1/sampling_rate)
-    print(output)
-
-    distance = getSonar()
-    blockade = distance <= 25
-
-    if (PID.gap(PID, 100)):
-        flag = 0
-    robot_ir(speed, speed, 2*math.atan(output)/math.pi*speed, 1/sampling_rate, flag, blockade)
-    if blockade:
-        imageFile = takePhoto()
-        postTweet(distance, speed, "end", imageFile)
-    time.sleep(0.001)
-    return flag
 
 #-----------------------------------------------------------------#
 # Bluetooth handling code
