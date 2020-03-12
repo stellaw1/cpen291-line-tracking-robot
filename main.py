@@ -42,9 +42,14 @@ class Plotter:
         plt.xticks(rotation=45, ha='right')
         plt.autoscale(enable=True, axis='both', tight=None)
 
+# robotGUI class to display the graph
 class RobotGUI:
     def __init__(self):
+
+        # declare Tkinter window and variables to calculate the path travelled
         self.root = Tk()
+
+        # make fullscreen
         self.root.overrideredirect(True)
         self.root.geometry("{0}x{1}+0+0".format(self.root.winfo_screenwidth(), self.root.winfo_screenheight()))
 
@@ -87,11 +92,11 @@ class RobotGUI:
         
             self.running = True
 
+            # getting the turnvals from the track array 
             self.turnVal = track[round(i/self.plotLength * len(track))]
             self.speed = 0.4
 
-            # if we implement speed just comment out this line
-            # self.speed = speed
+            # calculating angles and direction of travel
             self.hyp = math.sqrt(math.pow(self.x, 2) + math.pow(self.y, 2) + self.speed
                                 - 2 * math.sqrt(math.pow(self.x, 2) + math.pow(self.y, 2))
                                 * math.cos(math.pi * (1 - self.turnVal / 2)))
@@ -447,33 +452,50 @@ flag = 1
 # calls a robot_stop at the beginning of every program start
 robot_stop()
 
+# gap variable for how long the robot can move when it doesn't detect anything
+# we obtained this value through calibration and calculation (~3cm gap)
+gap = 100
+
 # define a demo function that runs the robot autonomously to track line
 def demo():
     
+    # loops indefinitely for autonomous line tracking
     while True:
         try:
+            # set sampling rate and speed
             sampling_rate = 2000
-            speed = 0.4
+            speed = 0.
+            
+            # call pid to update and get the output values that the robot is suppose to turn
             pid.init(pid, Kp=0.1, Ki=0, Kd=7)
+
+            # output is between 1 and -1 and the robot turns right if output is positive and
+            # left if its negative, goes forward if 0
             output = pid.Update(pid, getErrorOverall())
-            #time.sleep(1/sampling_rate)
-            if (gap_count >= 100/factor):
+            
+            # if gap_count is bigger than the 3cm, stops the robot and tweets and graphs path travelled
+            if (gap_count >= gap/factor):
                 robot_stop()
                 postTweet(getSonar(), 3, "end", takePhoto())
                 rg = RobotGUI()
                 break
-            print(output)
-            # print(2*math.atan(output)/math.pi*speed)
+
+            # uncomment this to print the output
+            # print(output)
+
+            # calls robot_ir
             robot_ir(speed, 2*math.atan(output)/math.pi*speed, 1/sampling_rate, flag, 0)
-            # time.sleep(0.0001)
+
+        # catches a keyboardInterrupt and stops the robot, tweets and graphs path travelled
         except KeyboardInterrupt:
             robot_stop()
             postTweet(getSonar(), 3, "end", takePhoto())
             rg = RobotGUI()
             return
+
+        # catches IO error and continues to run
         except IOError:
             print("IO error")
-            # return
     destroy()
 
 #-----------------------------------------------------------------#
