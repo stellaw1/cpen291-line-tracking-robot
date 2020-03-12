@@ -1,18 +1,24 @@
 package com.example.robotcontroller;
 
+import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothSocket;
 import android.content.Intent;
+import android.graphics.Rect;
+import android.os.Build;
 import android.os.Handler;
 import android.os.Message;
 import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
 import android.widget.Button;
+import android.widget.ImageView;
+import android.widget.RelativeLayout;
 import android.widget.Toast;
 import androidx.annotation.Nullable;
+import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AppCompatActivity;
 import android.os.Bundle;
 
@@ -30,6 +36,15 @@ public class MainActivity extends AppCompatActivity {
     private static final String PI_ADDRESS = "DC:A6:32:30:25:A9";
     private ClientThread clientThread;
 
+    private float dX = 0;
+    private float dY = 0;
+    private Rect rect;
+
+    private float joystickX;
+    private float joystickY;
+
+    @SuppressLint("ClickableViewAccessibility")
+    @RequiresApi(api = Build.VERSION_CODES.O)
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -54,7 +69,62 @@ public class MainActivity extends AppCompatActivity {
         disconnect_bt.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                clientThread.connectedThread.write("Disconnect".getBytes());
+                clientThread.connectedThread.write("Demo".getBytes());
+            }
+        });
+
+        final ImageView joystick = findViewById(R.id.joystick);
+        final ImageView joystick_out = findViewById(R.id.joystick_out);
+
+        final RelativeLayout.LayoutParams lp = (RelativeLayout.LayoutParams) joystick_out.getLayoutParams();
+
+        joystick_out.setOnTouchListener(new View.OnTouchListener() {
+            @Override
+            public boolean onTouch(View v, MotionEvent event) {
+
+                switch (event.getAction()) {
+                    case MotionEvent.ACTION_DOWN:
+                        joystickX = joystick.getLeft();
+                        joystickY = joystick.getTop();
+
+                        dX = joystick.getX() - event.getRawX();
+                        dY = joystick.getY() - event.getRawY();
+                        return true;
+
+                    case MotionEvent.ACTION_MOVE:
+                        clientThread.connectedThread.write(((int) joystick.getX() + "," + (int) joystick.getY()).getBytes());
+                        if (event.getRawX() > 575 || event.getRawX() < 175 ||
+                            event.getRawY() > 1000 || event.getRawY() < 600) {
+                            joystick.setX(joystickX);
+                            joystick.setY(joystickY);
+                            clientThread.connectedThread.write("Stop".getBytes());
+                        } else {
+                            joystick.animate()
+                                    .x(event.getRawX() + dX)
+                                    .y(event.getRawY() + dY)
+                                    .setDuration(0)
+                                    .start();
+                        }
+                        return true;
+                    case MotionEvent.ACTION_UP:
+                        joystick.animate()
+                                .x(joystickX)
+                                .y(joystickY)
+                                .setDuration(0)
+                                .start();
+                        clientThread.connectedThread.write("Stop".getBytes());
+                        break;
+                }
+                return true;
+            }
+        });
+/*
+        joystick.setOnCapturedPointerListener(new View.OnCapturedPointerListener() {
+            @Override
+            public boolean onCapturedPointer(View view, MotionEvent event) {
+                float horizontalOffset = event.getX();
+                clientThread.connectedThread.write(ByteBuffer.allocate(4).putFloat(horizontalOffset).array());
+                return true;
             }
         });
 
@@ -113,6 +183,8 @@ public class MainActivity extends AppCompatActivity {
                 return true;
             }
         });
+
+ */
     }
 
     @Override
@@ -134,8 +206,6 @@ public class MainActivity extends AppCompatActivity {
         if (paired_devices.size() > 0) {
             for (BluetoothDevice bd : paired_devices) {
                 if (bd.getAddress().equals(PI_ADDRESS) || bd.getName().equals("raspberrypi")) {
-                    Toast.makeText(this, "Found device with address: "
-                            + bd.getAddress(), Toast.LENGTH_SHORT).show();
                     found = true;
                     pi = bd;
                 }
