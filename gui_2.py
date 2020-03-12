@@ -103,11 +103,7 @@ class RobotGUI:
 
         self.plot.graph(self.xVals, self.yVals, 'b', "Path Travelled So Far", "x", "y")
 
-<<<<<<< HEAD
         self.loop = self.root.after(1, lambda: self.begin_measure())
-=======
-        self.loop = self.root.after(2, lambda: self.begin_measure())
->>>>>>> 43e878038837eda25cc6523875e286839af54950
 
     # method for terminating the program
     def stop_program(self):
