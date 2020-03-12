@@ -27,3 +27,11 @@ https://circuitdigest.com/microcontroller-projects/raspberry-pi-line-follower-ro
 https://www.youtube.com/watch?v=LlFkybEQFFA&list=PLQVvvaa0QuDeJlgD1RX9_49tMLUxvIxF4
 
 https://learn.sparkfun.com/tutorials/sparkfun-inventors-kit-experiment-guide---v40/circuit-5c-autonomous-robot
+
+Additional: 
+Twitter
+Camera
+Plotting
+Sonar
+LCD
+App
