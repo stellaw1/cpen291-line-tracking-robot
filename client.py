@@ -8,6 +8,11 @@ from adafruit_motor import stepper
 
 kit = MotorKit()
 
+'''
+MAX_FORWARD = 1
+MAX_BACKWARDS = -1
+'''
+
 def robot_stop():
     kit.motor1.throttle = 0.0
     kit.motor2.throttle = 0.0
@@ -17,6 +22,46 @@ def robot_move(left, right):
     kit.motor1.throttle = right
     #time.sleep(delay)
     #robot_stop()
+
+
+def get_data(data):
+    tup = tuple(filter(None, data.split(',')))
+    return tup
+
+def get_speeds(x, y):
+
+    cX = 375
+    cY = 800
+    radius = 200
+    radX = x - cX 
+    radY = cY - y
+    left_speed = 0
+    right_speed = 0
+
+    if(x != 0 and y != 0):
+        float angle = degrees(atan2(-radY, radX))
+
+        if angle <= 90:
+            left_speed = MAX_FORWARD
+            right_speed = (angle % 91) / 90 * MAX_FORWARD
+        elif angle <= 180:
+            right_speed = MAX_FORWARD
+            left_speed = ((angle - 90) % 91) / 90 * MAX_FORWARD
+        elif angle <= 270:
+            right_speed = MAX_BACKWARDS
+            left_speed = ((angle - 180) % 91) / 90 * MAX_BACKWARDS
+        else:
+            left_speed = MAX_BACKWARDS
+            right_speed = ((angle - 270) % 91) / 90 * MAX_BACKWARDS
+    
+    else:
+        return (0, 0)
+
+    left = left_speed * radX/radius
+    right = right_speed * radY/radius
+    return (left, right)
+
+
 
 MAX_FORWARD = 1
 MAX_BACKWARDS = -1
@@ -50,16 +95,16 @@ while True:
 
             direction = data.decode(encoding='UTF-8')
 
-            if direction == 'Forward':
-                robot_move(1, 1)
-            elif direction == 'Backward':
-                robot_move(-1, -1)
-            elif direction == 'Left':
-                robot_move(0.5,1)
-            elif direction == 'Right':
-                robot_move(1,0.5)
-            elif direction == 'Stop':
+            motor_vals = get_data(data)
+            speeds = get_speeds(motor_vals[0], motor_vals[1])
+            left_speed = speeds[0]
+            right_speed = speeds[1]
+
+            
+            if direction == 'Stop':
                 robot_stop()
+            else:
+                robot_move(left_speed,right_speed)
 
         except IOError:
             break
