@@ -8,10 +8,10 @@ from adafruit_motor import stepper
 
 kit = MotorKit()
 
-'''
-MAX_FORWARD = 1
-MAX_BACKWARDS = -1
-'''
+
+MAX_FORWARD = 0.5
+MAX_BACKWARDS = -0.5
+
 
 def robot_stop():
     kit.motor1.throttle = 0.0
@@ -20,51 +20,57 @@ def robot_stop():
 def robot_move(left, right):
     kit.motor2.throttle = left
     kit.motor1.throttle = right
-    #time.sleep(delay)
     #robot_stop()
 
 
 def get_data(data):
     tup = tuple(filter(None, data.split(',')))
-    return tup
+    return (int(tup[0]), int(tup[1]))
 
 def get_speeds(x, y):
 
-    cX = 375
-    cY = 800
-    radius = 200
-    radX = x - cX 
+    cX = 290
+    cY = 590
+    radius = 220
+    radX = x - cX
     radY = cY - y
     left_speed = 0
     right_speed = 0
 
-    if(x != 0 and y != 0):
-        float angle = degrees(atan2(-radY, radX))
+    if (x != 0 and y != 0):
+        angle = math.degrees(math.atan2(radY, radX))
+        if angle < 0:
+            angle += 360
+        print("angle: ", angle)
 
         if angle <= 90:
             left_speed = MAX_FORWARD
             right_speed = (angle % 91) / 90 * MAX_FORWARD
         elif angle <= 180:
             right_speed = MAX_FORWARD
-            left_speed = ((angle - 90) % 91) / 90 * MAX_FORWARD
+            left_speed = ((180 - angle) % 91) / 90 * MAX_FORWARD
         elif angle <= 270:
             right_speed = MAX_BACKWARDS
             left_speed = ((angle - 180) % 91) / 90 * MAX_BACKWARDS
         else:
             left_speed = MAX_BACKWARDS
-            right_speed = ((angle - 270) % 91) / 90 * MAX_BACKWARDS
-    
+            right_speed = ((360 - angle) % 91) / 90 * MAX_BACKWARDS
     else:
         return (0, 0)
 
-    left = left_speed * radX/radius
-    right = right_speed * radY/radius
-    return (left, right)
+    left = left_speed * radX/(radius)
+    right = right_speed * radY/(radius)
 
-
-
-MAX_FORWARD = 1
-MAX_BACKWARDS = -1
+    if left > MAX_FORWARD:
+        left = MAX_FORWARD
+    if right > MAX_FORWARD:
+        right = MAX_FORWARD
+    if left < MAX_BACKWARDS:
+        left = MAX_BACKWARDS
+    if right < MAX_BACKWARDS:
+        right = MAX_BACKWARDS
+        
+    return (left_speed, right_speed)
 
 server_sock=BluetoothSocket( RFCOMM )
 server_sock.bind(("",PORT_ANY))
@@ -95,22 +101,23 @@ while True:
 
             direction = data.decode(encoding='UTF-8')
 
-            motor_vals = get_data(data)
-            speeds = get_speeds(motor_vals[0], motor_vals[1])
-            left_speed = speeds[0]
-            right_speed = speeds[1]
-
-            
-            if direction == 'Stop':
+            if direction == 'Demo':
+                import main
+            if (!direction.isdigit()):
                 robot_stop()
             else:
+                motor_vals = get_data(direction)
+                speeds = get_speeds(motor_vals[0], motor_vals[1])
+                left_speed = speeds[0]
+                right_speed = speeds[1]
                 robot_move(left_speed,right_speed)
 
         except IOError:
-            break
+            print("IOError")
+            continue
+
         except KeyboardInterrupt:
             print("disconnected")
             client_sock.close()
             server_sock.close()
-            print("all done")
             break
