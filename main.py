@@ -331,7 +331,7 @@ def robot_stop():
     kit.motor1.throttle = 0.0
     kit.motor2.throttle = 0.0
 
-# 
+
 global count
 count = 0
 global entry
@@ -464,7 +464,7 @@ def demo():
         try:
             # set sampling rate and speed
             sampling_rate = 2000
-            speed = 0.
+            speed = 0.4
             
             # call pid to update and get the output values that the robot is suppose to turn
             pid.init(pid, Kp=0.1, Ki=0, Kd=7)
@@ -474,14 +474,14 @@ def demo():
             output = pid.Update(pid, getErrorOverall())
             
             # if gap_count is bigger than the 3cm, stops the robot and tweets and graphs path travelled
-            if (gap_count >= gap/factor):
+            if (gap_count >= 100/factor):
                 robot_stop()
                 postTweet(getSonar(), 3, "end", takePhoto())
                 rg = RobotGUI()
                 break
 
             # uncomment this to print the output
-            # print(output)
+            print(output)
 
             # calls robot_ir
             robot_ir(speed, 2*math.atan(output)/math.pi*speed, 1/sampling_rate, flag, 0)
