@@ -87,9 +87,8 @@ class RobotGUI:
         
             self.running = True
 
-            values = track[round(i/self.plotLength * len(track))]
-            self.speed = values[0]
-            self.turnVal = values[1]
+            self.turnVal = track[round(i/self.plotLength * len(track))]
+            self.speed = 0.4
 
             # if we implement speed just comment out this line
             # self.speed = speed
@@ -135,41 +134,57 @@ class RobotGUI:
 #-----------------------------------------------------------------#
 # PID controller code
 
-# define a PID class that handles error output for line tracking
+
 class PID:
-    # initialize the class with a set Kp, Ki, Kd which are the gains
-    # for each P, I, D term in the controller
-    def init(self, Kp, Ki, Kd):
+    """PID controller."""
+
+    def init(self, Kp, Ki, Kd, origin_time=None):
+        if origin_time is None:
+            origin_time = time.time()
+
+        # Gains for each term
         self.Kp = Kp
         self.Ki = Ki
         self.Kd = Kd
 
-        # declare Ci variable to store preivous Integral term
-        self.Ci = 0
+        # Corrections calculated in update (outputs)
+        self.Cp = 0.0
+        self.Ci = 0.0
+        self.Cd = 0.0
 
-        # declare previous time and error variable to store previous 
-        # time and error
-        self.previous_time = time.time()
-        self.previous_error = 0
-
-    def update(self, error):
-
-        # calculate de (change in error) and dt (change in time)
-        # divide de and dt to get the Derivative term
-        de = error - self.previous_error
-        dt = time.time() - self.previous_time
-
-        # calculate current Ci by multiplying the error by dt and 
-        # adding it to previous Ci
-        self.Ci += error * dt
-
-        # if dt is smaller than 0 (previous_time is > current time)
-        # return 0
+        self.previous_time = origin_time
+        self.previous_error = 0.0
+        self.gap_count = 0
+        
+    def Update(self, error, current_time=None):
+        
+        if current_time is None:
+            current_time = time.time()
+            
+        dt = current_time - self.previous_time
         if dt <= 0.0:
             return 0
+        
+        de = error - self.previous_error
 
-        # return the output according to the PID formula
-        return self.Kp * error + self.Kd * de/dt + self.Ki * self.Ci
+        self.Cp = error
+        self.Ci += error * dt
+        self.Cd = de / dt
+
+        self.previous_time = current_time
+        self.previous_error = error
+        
+        output = (self.Kp * self.Cp) + (self.Ki * self.Ci) + (self.Kd * self.Cd) # derivative term
+        
+        if (output is 0):
+            self.gap_count += 1
+
+        return (
+            (self.Kp * self.Cp)    # proportional term
+            + (self.Ki * self.Ci)  # integral term
+            + (self.Kd * self.Cd)  # derivative term
+        )
+
 
 #-----------------------------------------------------------------#
 # Sensors code
@@ -284,13 +299,13 @@ def postTweet(distance, speed, state, imageFile):
 from picamera import PiCamera
 
 # initialize a PiCamera object by calling PiCamera
-# camera = PiCamera()
+camera = PiCamera()
 
 # define a takePhoto function that takes a picture and stores it to a
 # certain directory
 def takePhoto():
     pic = '/home/pi/Desktop/image1.jpg'
-    # camera.capture('/home/pi/Desktop/image%s.jpg' % 1)
+    camera.capture('/home/pi/Desktop/image%s.jpg' % 1)
     return pic
 
 # setup the Sonar sensors
@@ -315,12 +330,20 @@ def robot_stop():
     kit.motor1.throttle = 0.0
     kit.motor2.throttle = 0.0
 
+count = 0
+entry = 0
+
 # robot_move function that change the motors to the input throttle
 # for delay amoung of time (in seconds) 
 def robot_move(left, right, delay):
     kit.motor2.throttle = left
     kit.motor1.throttle = right
-    track.append([delay, left-right])
+    entry += delay*(left-right)
+    count += 1
+
+    if count > 100: 
+        track.append(entry/count)
+
     time.sleep(delay)
 
 # robot_run function that simply sets the left and right motors to 
@@ -376,7 +399,6 @@ def robot_ir(speed, adjuster, times, flag, blockade):
 #-----------------------------------------------------------------#
 # Line tracking code
 
-from PID import PID as pid
 import math
 
 # dictionaries for the error value according to the optical sensor readings
@@ -434,7 +456,7 @@ def demo():
             if (gap_count >= 100/factor):
                 robot_stop()
                 postTweet(getSonar(), 3, "end", takePhoto())
-                RobotGUI()
+                rg = RobotGUI()
                 break
             print(output)
             # print(2*math.atan(output)/math.pi*speed)
@@ -443,11 +465,11 @@ def demo():
     except KeyboardInterrupt:
         robot_stop()
         postTweet(getSonar(), 3, "end", takePhoto())
-        RobotGUI()
+        rg = RobotGUI()
         return
-    except:
+    except IOError:
         print("IO error")
-        return
+        # return
     destroy()
 
 #-----------------------------------------------------------------#
