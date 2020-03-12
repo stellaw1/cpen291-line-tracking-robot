@@ -302,28 +302,48 @@ import glob
 from bluetooth import *
 import re
 
+# Maximum speeds for the motorhat motors
 MAX_FORWARD = 1
 MAX_BACKWARDS = -1
 
+# converts input string in the format "x,y" into a tuple of integers to use for
+# motor speed calculation
 def get_data(data):
     tup = tuple(filter(None, data.split(',')))
     return (int(tup[0]), int(tup[1]))
 
+# gets the speed of the left and right motors based on x and y coordinates of
+# joystick on app
 def get_speeds(x, y):
-
+    # centre coordinates of the joystick in the app
     cX = 290
     cY = 590
+
+    #radius of joystick outer circle
     radius = 220
+
+    # calculting current displacement of joystick from centre
     radX = x - cX
     radY = cY - y
+
     left_speed = 0
     right_speed = 0
 
     if (x != 0 and y != 0):
+        # angle calculated using simple cartesian coordinates
         angle = math.degrees(math.atan2(radY, radX))
+
+        # for angles > 180 degrees, atan calculates the negative angle, so it is
+        # readjusted to compensate
         if angle < 0:
             angle += 360
 
+        # right and left motor speeds are adjusted based on the current quadrant
+        # the joystick is in
+        # when the joystick is aligned towards the right of the joystick area,
+        # the left motor is set to maximum speed and the right motor speed is
+        # increased to cause robot to turn right
+        # the same applies for left turns
         if angle <= 90:
             left_speed = MAX_FORWARD
             right_speed = (angle % 91) / 90 * MAX_FORWARD
@@ -339,11 +359,16 @@ def get_speeds(x, y):
     else:
         return (0, 0)
 
+    # displacement calculated based on joystick distance from centre
     displacement = math.sqrt(radX * radX + radY * radY)
 
+    # speeds are adjusted relative to the displacement, ie. further from the
+    # centre causes faster speeds
     left = left_speed * displacement / radius
     right = right_speed * displacement / radius
 
+    # if the input goes out of bounds and causes the speed to go outside of the
+    # indicated range, it is capped at max speed
     if left > MAX_FORWARD:
         left = MAX_FORWARD
     if right > MAX_FORWARD:
@@ -355,14 +380,18 @@ def get_speeds(x, y):
 
     return (left, right)
 
+# creating a new bluetooth server socket using rfcomm bluetooth protocols
 server_sock=BluetoothSocket( RFCOMM )
 server_sock.bind(("",PORT_ANY))
 server_sock.listen(1)
 
 port = server_sock.getsockname()[1]
 
+# setting a uuid that both client and user can use to connect to the service
+# this uuid is a standard one that is used for rpi bluetooth communication
 uuid = "94f39d29-7d6d-437d-973b-fba39e49d4ee"
 
+# advertising the service to allow for client connections
 advertise_service( server_sock, "LineTrackerServer",
                    service_id = uuid,
                    service_classes = [ uuid, SERIAL_PORT_CLASS ],
@@ -371,19 +400,24 @@ advertise_service( server_sock, "LineTrackerServer",
 while True:
     print("Waiting for connection on RFCOMM channel ", port)
 
+    # blocking call that waits for a client to connect to the server before
+    # proceeding
     client_sock, client_info = server_sock.accept()
     print ("Accepted connection from ", client_info)
 
     while True:
         try:
+            # receieves data from the client
             data = client_sock.recv(1024)
 
             if len(data) == 0:
                 print("no data")
                 break
 
+            # data from client will be in string format so it is first decoded
             direction = data.decode(encoding='UTF-8')
 
+            # checks which type of data the client has sent and acts accordingly
             if direction == 'Demo':
                 demo()
             elif (re.search('[a-zA-Z]', direction)):
@@ -399,6 +433,8 @@ while True:
             print("IOError")
             continue
 
+        # on a KeyboardInterrupt, the connection is cancelled and the socket is
+        # closed
         except KeyboardInterrupt:
             print("disconnected")
             client_sock.close()
